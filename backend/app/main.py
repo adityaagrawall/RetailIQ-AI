@@ -64,7 +64,7 @@ app.add_middleware(
 
 app.add_middleware(
     TrustedHostMiddleware, 
-    allowed_hosts=["*"] if not settings.is_production else ["your-domain.com", "*.your-domain.com", "localhost", "127.0.0.1"]
+    allowed_hosts=["*"] if not settings.is_production else ["*.onrender.com", "*.vercel.app", "localhost", "127.0.0.1", "*"]
 )
 
 

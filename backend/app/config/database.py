@@ -11,7 +11,9 @@ connect_args = {"check_same_thread": False} if "sqlite" in settings.database_url
 engine = create_engine(
     settings.database_url,
     connect_args=connect_args,
-    echo=settings.debug,       # Log SQL queries only in debug mode
+    echo=settings.debug,
+    pool_pre_ping=True,
+    pool_recycle=300,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

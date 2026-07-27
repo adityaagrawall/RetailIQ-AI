@@ -95,7 +95,7 @@ class AIService:
             FROM transactions
             WHERE quantity > 0 AND is_return = FALSE
               AND invoice_date >= :seven_days_ago
-              AND upload_id = (SELECT id FROM uploads WHERE is_active = 1 LIMIT 1)
+              AND upload_id = (SELECT id FROM uploads WHERE is_active = TRUE LIMIT 1)
             GROUP BY CAST(invoice_date AS DATE)
             ORDER BY 1
         """), {"seven_days_ago": seven_days_ago}).fetchall()

@@ -121,7 +121,7 @@ class TransactionRepository:
                 COUNT(*)                                  AS transaction_count
             FROM transactions
             WHERE is_return = FALSE AND quantity > 0
-              AND upload_id = (SELECT id FROM uploads WHERE is_active = 1 LIMIT 1)
+              AND upload_id = (SELECT id FROM uploads WHERE is_active = TRUE LIMIT 1)
             GROUP BY period
             ORDER BY period
         """)
@@ -149,7 +149,7 @@ class TransactionRepository:
             FROM transactions t
             JOIN products p ON p.id = t.product_id
             WHERE t.is_return = FALSE AND t.quantity > 0
-              AND t.upload_id = (SELECT id FROM uploads WHERE is_active = 1 LIMIT 1)
+              AND t.upload_id = (SELECT id FROM uploads WHERE is_active = TRUE LIMIT 1)
             GROUP BY p.id, p.stock_code, p.description, p.abc_class
             ORDER BY total_revenue DESC
             LIMIT :n

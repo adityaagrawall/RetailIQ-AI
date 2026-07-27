@@ -86,16 +86,19 @@ class AIService:
             GROUP BY abc_class
         """)).fetchall()
 
+        from datetime import timedelta
+        seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        
         # Recent 7-day trend
         trend = db.execute(text("""
-            SELECT DATE(invoice_date), SUM(revenue), SUM(quantity)
+            SELECT CAST(invoice_date AS DATE), SUM(revenue), SUM(quantity)
             FROM transactions
             WHERE quantity > 0 AND is_return = FALSE
-              AND invoice_date >= date('now', '-7 days')
+              AND invoice_date >= :seven_days_ago
               AND upload_id = (SELECT id FROM uploads WHERE is_active = 1 LIMIT 1)
-            GROUP BY DATE(invoice_date)
+            GROUP BY CAST(invoice_date AS DATE)
             ORDER BY 1
-        """)).fetchall()
+        """), {"seven_days_ago": seven_days_ago}).fetchall()
 
         context = {
             "kpis": {

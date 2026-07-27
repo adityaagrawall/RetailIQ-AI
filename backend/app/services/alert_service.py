@@ -43,19 +43,22 @@ class AlertService:
         lead_time = settings.default_lead_time_days
         z = settings.safety_stock_z_score  # 1.65 = 95% service level
 
-        sql = text(f"""
-            SELECT
-                p.id                           AS product_id,
+        from datetime import datetime, timedelta
+        thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        
+        sql = text("""
+            SELECT 
+                p.id, 
                 AVG(ds.total_quantity)         AS avg_daily_sales,
                 STDDEV(ds.total_quantity)      AS std_daily_sales,
                 SUM(ds.total_quantity)         AS total_30d_sales
             FROM products p
             JOIN daily_sales ds ON ds.product_id = p.id
-            WHERE ds.sale_date >= date('now', '-30 days')
+            WHERE ds.sale_date >= :thirty_days_ago
             GROUP BY p.id
             HAVING AVG(ds.total_quantity) > 0
         """)
-        rows = self.db.execute(sql).fetchall()
+        rows = self.db.execute(sql, {"thirty_days_ago": thirty_days_ago}).fetchall()
 
         alerts = []
         for row in rows:
@@ -87,25 +90,34 @@ class AlertService:
 
     def _compute_stockout_risk_alerts(self) -> List[dict]:
         """Flag products with rapidly declining sales trend (potential stockout signal)."""
+        from datetime import datetime, timedelta
+        thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d')
+        eight_days_ago = (datetime.now() - timedelta(days=8)).strftime('%Y-%m-%d')
+        
         sql = text("""
             SELECT
                 product_id,
-                AVG(CASE WHEN sale_date >= date('now', '-7 days')
+                AVG(CASE WHEN sale_date >= :seven_days_ago
                          THEN total_quantity END) AS recent_7d_avg,
-                AVG(CASE WHEN sale_date BETWEEN date('now', '-30 days')
-                                              AND date('now', '-8 days')
+                AVG(CASE WHEN sale_date BETWEEN :thirty_days_ago
+                                              AND :eight_days_ago
                          THEN total_quantity END) AS prior_avg
             FROM daily_sales
-            WHERE sale_date >= date('now', '-30 days')
+            WHERE sale_date >= :thirty_days_ago
             GROUP BY product_id
             HAVING
-                AVG(CASE WHEN sale_date >= date('now', '-7 days')
+                AVG(CASE WHEN sale_date >= :seven_days_ago
                          THEN total_quantity END) IS NOT NULL
-                AND AVG(CASE WHEN sale_date BETWEEN date('now', '-30 days')
-                                               AND date('now', '-8 days')
+                AND AVG(CASE WHEN sale_date BETWEEN :thirty_days_ago
+                                               AND :eight_days_ago
                          THEN total_quantity END) > 0
         """)
-        rows = self.db.execute(sql).fetchall()
+        rows = self.db.execute(sql, {
+            "thirty_days_ago": thirty_days_ago,
+            "seven_days_ago": seven_days_ago,
+            "eight_days_ago": eight_days_ago
+        }).fetchall()
 
         alerts = []
         for row in rows:
@@ -131,15 +143,18 @@ class AlertService:
 
     def _compute_slow_mover_alerts(self) -> List[dict]:
         """Use IQR to flag slow-moving products."""
+        from datetime import datetime, timedelta
+        thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        
         sql = text("""
             SELECT
                 product_id,
                 CAST(AVG(total_quantity) AS FLOAT) AS avg_qty
             FROM daily_sales
-            WHERE sale_date >= date('now', '-30 days')
+            WHERE sale_date >= :thirty_days_ago
             GROUP BY product_id
         """)
-        rows = self.db.execute(sql).fetchall()
+        rows = self.db.execute(sql, {"thirty_days_ago": thirty_days_ago}).fetchall()
         if not rows:
             return []
 

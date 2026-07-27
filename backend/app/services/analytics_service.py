@@ -164,7 +164,10 @@ class AnalyticsService:
         Detect slow-moving products using IQR on 30-day sales velocity.
         Products below Q1 - 1.5*IQR are flagged as slow movers.
         """
-        sql = text(f"""
+        from datetime import datetime, timedelta
+        threshold_date = (datetime.now() - timedelta(days=threshold_days)).strftime('%Y-%m-%d')
+        
+        sql = text("""
             SELECT
                 p.id,
                 p.stock_code,
@@ -173,10 +176,10 @@ class AnalyticsService:
                 MAX(ds.sale_date) AS last_sale_date
             FROM products p
             JOIN daily_sales ds ON ds.product_id = p.id
-            WHERE ds.sale_date >= date('now', '-{threshold_days} days')
+            WHERE ds.sale_date >= :threshold_date
             GROUP BY p.id, p.stock_code, p.description
         """)
-        rows = self.db.execute(sql).fetchall()
+        rows = self.db.execute(sql, {"threshold_date": threshold_date}).fetchall()
 
         if not rows:
             return []

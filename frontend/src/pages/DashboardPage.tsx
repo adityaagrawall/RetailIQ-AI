@@ -28,7 +28,10 @@ const ChartTooltip = ({ active, payload, label }: any) => {
 export default function DashboardPage() {
   const navigate = useNavigate();
 
-  const { data: kpis, isLoading: kpiLoading } = useQuery({ queryKey: ['kpis'], queryFn: getKPIs });
+  const { data: kpis, isLoading: kpiLoading } = useQuery<any>({
+    queryKey: ['kpis'],
+    queryFn: () => getKPIs(),
+  });
   const { data: trend, isLoading: trendLoading } = useQuery({
     queryKey: ['revenue-trend', 'weekly'],
     queryFn: () => getRevenueTrend('weekly'),

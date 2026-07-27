@@ -33,7 +33,7 @@ export default function InsightsPage() {
 
   const { data: summary, isLoading: summaryLoading } = useQuery({
     queryKey: ['ai-summary'],
-    queryFn: getAISummary,
+    queryFn: () => getAISummary(),
     retry: false,
   });
 

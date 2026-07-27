@@ -247,7 +247,7 @@ export default function UploadPage() {
                     </td>
                   </tr>
                 )}
-                {datasets.map(ds => (
+                {datasets.map((ds: any) => (
                   <tr key={ds.id} className={clsx(ds.is_active ? "bg-blue-50/30" : "")}>
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-2">

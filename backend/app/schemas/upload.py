@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 from typing import Optional
 from datetime import datetime
 
@@ -12,9 +12,10 @@ class UploadResponse(BaseModel):
 
 
 class UploadStatusResponse(BaseModel):
-    upload_id: int
+    upload_id: int = Field(validation_alias="id")
     filename: str
     status: str
+    is_active: bool = False
     row_count: Optional[int] = None
     valid_rows: Optional[int] = None
     invalid_rows: Optional[int] = None

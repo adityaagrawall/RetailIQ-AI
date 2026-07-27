@@ -6,12 +6,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+connect_args = {"check_same_thread": False} if "sqlite" in settings.database_url else {}
+
 engine = create_engine(
     settings.database_url,
-    pool_pre_ping=True,        # Detect stale connections
-    pool_size=10,              # Connection pool size
-    max_overflow=20,           # Extra connections beyond pool_size
-    pool_recycle=3600,         # Recycle connections every hour
+    connect_args=connect_args,
     echo=settings.debug,       # Log SQL queries only in debug mode
 )
 

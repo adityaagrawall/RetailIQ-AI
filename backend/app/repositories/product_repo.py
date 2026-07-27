@@ -59,6 +59,9 @@ class ProductRepository:
                 "stock_code": p.stock_code,
                 "description": p.description,
                 "abc_class": p.abc_class,
+                "current_stock": p.current_stock,
+                "lead_time_days": p.lead_time_days,
+                "safety_stock": p.safety_stock,
                 "total_revenue": float(row[1] or 0),
                 "total_quantity": int(row[2] or 0),
                 "avg_daily_sales": float(row[3] or 0),
@@ -78,15 +81,31 @@ class ProductRepository:
         existing_codes = {
             row[0] for row in self.db.query(Product.stock_code).all()
         }
+        import numpy as np
         new_products = []
         seen = set()
         for _, row in df.iterrows():
             code = str(row["StockCode"]).strip()
             if code not in existing_codes and code not in seen:
                 seen.add(code)
+                
+                # Simulate authentic supply chain data for MVP
+                unit_price = float(row.get("Price", 0.0))
+                # Lead time between 3 and 21 days (gamma distributed)
+                lead_time = int(np.clip(np.random.gamma(shape=5.0, scale=2.0), 3, 21))
+                # Assume current stock covers between 5 and 60 days of sales (randomized)
+                # Since we don't have sales rate yet, just do a random baseline
+                current_stock = int(np.random.lognormal(mean=4.0, sigma=1.0))
+                # Safety stock is usually 10-30% of standard deviation over lead time, we'll mock
+                safety = int(current_stock * np.random.uniform(0.1, 0.4))
+                
                 new_products.append(Product(
                     stock_code=code,
                     description=str(row.get("Description", "")).strip()[:500] or None,
+                    current_stock=current_stock,
+                    lead_time_days=lead_time,
+                    safety_stock=safety,
+                    unit_cost=max(0.1, unit_price * 0.4) # Assume 60% gross margin
                 ))
         if new_products:
             self.db.add_all(new_products)

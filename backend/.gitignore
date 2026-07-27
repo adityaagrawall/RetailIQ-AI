@@ -1,0 +1,34 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# SQLite
+*.db
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# Fastapi/Uvicorn/Logging
+*.log
+
+# Caches
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local Dev
+uploads_temp/
+ml_artifacts/
+data/demo.csv
+venv311/

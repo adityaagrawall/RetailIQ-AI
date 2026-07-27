@@ -4,7 +4,6 @@ from datetime import datetime
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
-from app.ml.prophet_model import train_prophet
 from app.ml.xgboost_model import train_xgboost
 from app.repositories.forecast_repo import ForecastRepository
 from app.repositories.product_repo import ProductRepository
@@ -23,7 +22,7 @@ class ForecastService:
 
     def trigger_training(
         self,
-        model_name: str = "prophet",
+        model_name: str = "xgboost",
         product_ids: Optional[List[int]] = None,
         horizon_days: int = 30,
     ) -> int:
@@ -76,16 +75,15 @@ class ForecastService:
                     "total_revenue": float(r.total_revenue or 0),
                 } for r in daily_rows])
 
-                if model_name == "prophet":
-                    forecasts, metrics, artifact_path = train_prophet(
-                        df_daily, horizon_days, product.id
-                    )
-                elif model_name == "xgboost":
+                if model_name == "xgboost":
                     forecasts, metrics, artifact_path = train_xgboost(
                         df_daily, horizon_days, product.id
                     )
                 else:
-                    continue
+                    logger.warning(f"Model {model_name} not supported, defaulting to xgboost")
+                    forecasts, metrics, artifact_path = train_xgboost(
+                        df_daily, horizon_days, product.id
+                    )
 
                 if forecasts:
                     self.forecast_repo.save_forecasts(product.id, run_id, forecasts)
@@ -125,7 +123,7 @@ class ForecastService:
     def get_product_forecast(
         self,
         product_id: int,
-        model_name: str = "prophet",
+        model_name: str = "xgboost",
         horizon_days: int = 30,
     ) -> dict:
         """Retrieve stored forecasts for a product, triggering training if none exist."""

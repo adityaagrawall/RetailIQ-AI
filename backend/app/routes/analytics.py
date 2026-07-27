@@ -5,7 +5,7 @@ from datetime import date
 
 from app.config.database import get_db
 from app.services.analytics_service import AnalyticsService
-from app.schemas.analytics import KPIResponse, ABCAnalysisResponse
+from app.schemas.analytics import KPIResponse
 
 router = APIRouter(prefix="/analytics", tags=["Analytics"])
 

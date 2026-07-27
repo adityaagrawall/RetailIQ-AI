@@ -169,11 +169,11 @@ class AnalyticsService:
                 p.id,
                 p.stock_code,
                 p.description,
-                AVG(ds.total_quantity)::FLOAT AS avg_30d_sales,
+                CAST(AVG(ds.total_quantity) AS FLOAT) AS avg_30d_sales,
                 MAX(ds.sale_date) AS last_sale_date
             FROM products p
             JOIN daily_sales ds ON ds.product_id = p.id
-            WHERE ds.sale_date >= CURRENT_DATE - INTERVAL '{threshold_days} days'
+            WHERE ds.sale_date >= date('now', '-{threshold_days} days')
             GROUP BY p.id, p.stock_code, p.description
         """)
         rows = self.db.execute(sql).fetchall()

@@ -2,12 +2,22 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, Query, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
-from app.config.database import get_db
+from app.config.database import get_db, SessionLocal
 from app.services.forecast_service import ForecastService
 from app.repositories.forecast_repo import ForecastRepository
 from app.schemas.forecast import TrainRequest, TrainResponse, MLRunResponse
 
 router = APIRouter(prefix="/forecasts", tags=["Forecasts"])
+
+
+def train_task(model_name: str, product_ids: Optional[List[int]], horizon_days: int):
+    """Background worker wrapper for ML training with isolated DB session."""
+    db = SessionLocal()
+    try:
+        svc = ForecastService(db)
+        svc.trigger_training(model_name, product_ids, horizon_days)
+    finally:
+        db.close()
 
 
 @router.post("/train", response_model=TrainResponse)
@@ -30,7 +40,7 @@ def train_models(
     )
 
     background_tasks.add_task(
-        svc.trigger_training,
+        train_task,
         request.model,
         request.product_ids,
         request.horizon_days,

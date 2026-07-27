@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error
 from app.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -18,8 +17,8 @@ def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict:
     y_true = np.array(y_true, dtype=float)
     y_pred = np.array(y_pred, dtype=float)
 
-    mae = mean_absolute_error(y_true, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    mae = np.mean(np.abs(y_true - y_pred))
+    rmse = np.sqrt(np.mean((y_true - y_pred) ** 2))
 
     # MAPE: skip rows where actual is 0 to avoid division by zero
     mask = y_true != 0

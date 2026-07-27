@@ -10,6 +10,10 @@ class ProductBase(BaseModel):
     description: Optional[str] = None
     category: Optional[str] = None
     abc_class: Optional[str] = None
+    current_stock: int = 0
+    lead_time_days: int = 7
+    safety_stock: int = 0
+    unit_cost: float = 0.0
     is_active: bool = True
 
 
@@ -27,6 +31,9 @@ class ProductSummary(BaseModel):
     stock_code: str
     description: Optional[str]
     abc_class: Optional[str]
+    current_stock: int
+    lead_time_days: int
+    safety_stock: int
     total_revenue: Optional[float]
     total_quantity: Optional[int]
     avg_daily_sales: Optional[float]
@@ -57,48 +64,7 @@ class KPIResponse(BaseModel):
     date_range_end: Optional[date]
 
 
-class ABCItem(BaseModel):
-    product_id: int
-    stock_code: str
-    description: Optional[str]
-    abc_class: str
-    total_revenue: float
-    revenue_pct: float
-    cumulative_pct: float
-
-
-class ABCAnalysisResponse(BaseModel):
-    A: List[ABCItem]
-    B: List[ABCItem]
-    C: List[ABCItem]
-    summary: dict  # {'A': {'count': N, 'revenue_pct': X}, ...}
-
-
-class SlowMoverResponse(BaseModel):
-    product_id: int
-    stock_code: str
-    description: Optional[str]
-    avg_30d_sales: float
-    threshold: float
-    days_since_last_sale: Optional[int]
-    severity: str
-
-
-class RevenueTrendPoint(BaseModel):
-    period: str
-    revenue: float
-    quantity: int
-    transaction_count: int
-
-
-class TopProductResponse(BaseModel):
-    rank: int
-    product_id: int
-    stock_code: str
-    description: Optional[str]
-    abc_class: Optional[str]
-    total_revenue: float
-    total_quantity: int
+# Removed unused schemas for simplicity
 
 
 # ---- Alert Schemas ----

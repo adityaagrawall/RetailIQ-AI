@@ -1,5 +1,5 @@
 from app.config.database import Base
-from sqlalchemy import Column, Integer, String, DateTime, Text, func
+from sqlalchemy import Column, Integer, String, DateTime, Text, Boolean, func
 
 
 class Upload(Base):
@@ -13,6 +13,7 @@ class Upload(Base):
     invalid_rows = Column(Integer)
     status = Column(String(20), default="pending", nullable=False, index=True)
     # Status: 'pending', 'processing', 'completed', 'failed'
+    is_active = Column(Boolean, default=False, nullable=False)
     error_message = Column(Text)
     uploaded_at = Column(DateTime(timezone=True), server_default=func.now())
     processed_at = Column(DateTime(timezone=True))

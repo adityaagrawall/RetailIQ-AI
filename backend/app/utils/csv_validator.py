@@ -21,13 +21,18 @@ REQUIRED_COLUMNS = {
 COLUMN_ALIASES = {
     "UnitPrice": "Price",
     "unit_price": "Price",
+    "Sales": "Price",  # Map Superstore Sales to Price (we will default Quantity=1)
     "CustomerID": "Customer ID",
     "customer_id": "Customer ID",
     "invoice_no": "InvoiceNo",
+    "Order ID": "InvoiceNo", # Superstore alias
     "stock_code": "StockCode",
+    "Product ID": "StockCode", # Superstore alias
     "description": "Description",
+    "Product Name": "Description", # Superstore alias
     "quantity": "Quantity",
     "invoice_date": "InvoiceDate",
+    "Order Date": "InvoiceDate", # Superstore alias
     "country": "Country",
 }
 
@@ -46,6 +51,10 @@ def validate_and_clean(df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
     df.columns = df.columns.str.strip()
     df = df.rename(columns=COLUMN_ALIASES)
 
+    # 1.5 Handle missing columns for alternate schemas like Superstore
+    if "Quantity" not in df.columns:
+        df["Quantity"] = 1
+
     # 2. Check required columns exist
     missing = REQUIRED_COLUMNS - set(df.columns)
     if missing:
@@ -62,7 +71,8 @@ def validate_and_clean(df: pd.DataFrame) -> Tuple[pd.DataFrame, list]:
 
     # 4. Parse InvoiceDate
     try:
-        df["InvoiceDate"] = pd.to_datetime(df["InvoiceDate"], infer_datetime_format=True)
+        # Try standard parsing first, fallback to dayfirst for DD/MM/YYYY formats
+        df["InvoiceDate"] = pd.to_datetime(df["InvoiceDate"], format="mixed", dayfirst=True)
     except Exception as e:
         errors.append({
             "type": "date_parse_error",

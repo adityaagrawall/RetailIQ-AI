@@ -1,83 +1,88 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import {
-  LayoutDashboard, Package, TrendingUp, Bell,
-  Sparkles, BarChart3, Upload, Activity
-} from 'lucide-react';
+import { LayoutDashboard, Package, BarChart2 } from 'lucide-react';
 import { clsx } from 'clsx';
 
 const NAV_ITEMS = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/products', icon: Package, label: 'Products' },
-  { path: '/forecasts', icon: TrendingUp, label: 'Forecasts' },
-  { path: '/alerts', icon: Bell, label: 'Alerts' },
-  { path: '/ai', icon: Sparkles, label: 'AI Assistant' },
-  { path: '/analytics', icon: BarChart3, label: 'Analytics' },
+  { path: '/overview', icon: LayoutDashboard, label: 'Overview' },
+  { path: '/inventory', icon: Package, label: 'Inventory' },
+  { path: '/insights', icon: BarChart2, label: 'Insights' },
 ];
+
+const SETTINGS_ITEMS = [
+  { path: '/upload', label: 'Data Source' },
+  { path: '/help', label: 'Getting Started / Help' }
+];
+
+
 
 export default function Layout() {
   const location = useLocation();
 
+  const renderPrimaryNav = (items: typeof NAV_ITEMS) => items.map(({ path, icon: Icon, label }) => {
+    const isActive = location.pathname.startsWith(path);
+    return (
+      <NavLink key={path} to={path} className="block group outline-none">
+        <div className={clsx(
+          'flex items-center gap-2.5 px-3 py-1.5 mx-2 rounded-md text-sm select-none transition-colors duration-75',
+          isActive
+            ? 'bg-gray-200/50 text-gray-900 font-medium shadow-sm border border-gray-200/50'
+            : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900 group-focus-visible:ring-1 ring-gray-400'
+        )}>
+          <Icon className="w-4 h-4 flex-shrink-0" strokeWidth={isActive ? 2 : 1.5} />
+          <span>{label}</span>
+        </div>
+      </NavLink>
+    );
+  });
+
+  const renderSecondaryNav = (items: typeof SETTINGS_ITEMS) => items.map(({ path, label }) => {
+    const isActive = location.pathname.startsWith(path);
+    return (
+      <NavLink key={path} to={path} className="block group outline-none">
+        <div className={clsx(
+          'flex items-center px-3 py-1 mx-2 rounded-md text-xs select-none transition-colors duration-75',
+          isActive
+            ? 'text-gray-900 font-medium bg-gray-100'
+            : 'text-gray-500 hover:bg-gray-100 hover:text-gray-900'
+        )}>
+          <span>{label}</span>
+        </div>
+      </NavLink>
+    );
+  });
+
   return (
-    <div className="flex h-screen bg-bg-base overflow-hidden">
-      {/* ── Sidebar ──────────────────────────────────────────────── */}
-      <aside className="w-60 flex-shrink-0 bg-bg-surface border-r border-border flex flex-col">
-        {/* Logo */}
-        <div className="h-[60px] flex items-center gap-3 px-4 border-b border-border">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center">
-            <Activity className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-text-primary leading-none">RetailIQ</p>
-            <p className="text-[10px] text-text-muted mt-0.5">Analytics Platform</p>
-          </div>
+    <div className="flex h-screen bg-[#FBFBFA] overflow-hidden font-sans">
+      {/* ── Sidebar ──────────────────────────────────────────── */}
+      <aside className="w-60 flex-shrink-0 bg-[#FBFBFA] border-r border-gray-200 flex flex-col">
+        {/* Workspace Selector */}
+        <div className="h-14 flex items-center gap-2.5 px-5 mt-1 mb-2">
+          <div className="w-5 h-5 rounded-[4px] bg-gray-900 shadow-sm" />
+          <span className="text-sm font-semibold text-gray-900 tracking-tight">RetailIQ AI</span>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ path, icon: Icon, label }) => {
-            const isActive = location.pathname.startsWith(path);
-            return (
-              <NavLink key={path} to={path}>
-                <div className={clsx(
-                  'nav-item',
-                  isActive && 'active'
-                )}>
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span>{label}</span>
-                </div>
-              </NavLink>
-            );
-          })}
+        {/* Primary Nav */}
+        <nav className="space-y-0.5">
+          {renderPrimaryNav(NAV_ITEMS)}
         </nav>
 
-        {/* Footer */}
-        <div className="px-4 py-4 border-t border-border">
-          <NavLink to="/upload">
-            <div className="nav-item">
-              <Upload className="w-4 h-4 flex-shrink-0" />
-              <span>Upload Data</span>
-            </div>
-          </NavLink>
-          <p className="text-[10px] text-text-muted mt-3">UCI Online Retail II</p>
-          <p className="text-[10px] text-text-muted">v1.0.0</p>
+        {/* Secondary Nav */}
+        <div className="py-4 mt-4 border-t border-gray-200/60 space-y-0.5">
+          {renderSecondaryNav(SETTINGS_ITEMS)}
+        </div>
+        
+        {/* User Profile */}
+        <div className="mt-auto px-4 py-3 border-t border-gray-200/60 flex items-center gap-2 cursor-pointer hover:bg-gray-100 transition-colors">
+          <div className="w-5 h-5 rounded bg-gradient-to-tr from-gray-300 to-gray-400 shadow-inner" />
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-medium text-gray-900 truncate">System Admin</span>
+          </div>
         </div>
       </aside>
 
-      {/* ── Main Content ──────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Topbar */}
-        <header className="h-[60px] flex items-center justify-between px-6 bg-bg-surface border-b border-border flex-shrink-0">
-          <h1 className="text-sm font-medium text-text-primary">
-            {NAV_ITEMS.find(n => location.pathname.startsWith(n.path))?.label || 'RetailIQ AI'}
-          </h1>
-          <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-success animate-pulse" title="System Online" />
-            <span className="text-xs text-text-muted">System Online</span>
-          </div>
-        </header>
-
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+      {/* ── Main content area ─────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 bg-white">
+        <main className="flex-1 overflow-y-auto">
           <Outlet />
         </main>
       </div>

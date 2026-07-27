@@ -4,12 +4,16 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.config.settings import settings
+from app.config.database import Base, engine
+import app.models  # Ensures all ORM models are registered
 from app.utils.logger import setup_logging
 from app.routes import upload, products, analytics, forecasts, alerts, ai, export
 
@@ -17,8 +21,7 @@ from app.routes import upload, products, analytics, forecasts, alerts, ai, expor
 setup_logging()
 logger = logging.getLogger(__name__)
 
-# Rate limiter
-limiter = Limiter(key_func=get_remote_address)
+from app.config.rate_limit import limiter
 
 
 @asynccontextmanager
@@ -26,6 +29,9 @@ async def lifespan(app: FastAPI):
     """Application startup and shutdown events."""
     logger.info(f"Starting RetailIQ AI v{settings.app_version} [{settings.environment}]")
     logger.info(f"Allowed origins: {settings.allowed_origins_list}")
+    # Automatically initialize SQLite database tables if they do not exist
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables initialized successfully.")
     yield
     logger.info("RetailIQ AI shutting down.")
 
@@ -54,6 +60,11 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["*"],
+)
+
+app.add_middleware(
+    TrustedHostMiddleware, 
+    allowed_hosts=["*"] if not settings.is_production else ["your-domain.com", "*.your-domain.com", "localhost", "127.0.0.1"]
 )
 
 
@@ -89,6 +100,15 @@ async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=500,
         content={"error": "Internal Server Error", "detail": detail, "status_code": 500},
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"Validation error on {request.url.path}: {exc}")
+    # Mask granular details in production if needed, but usually validation errors are safe
+    return JSONResponse(
+        status_code=422,
+        content={"error": "Unprocessable Entity", "detail": exc.errors(), "status_code": 422},
     )
 
 

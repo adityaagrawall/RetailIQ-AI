@@ -51,7 +51,7 @@ class AlertService:
                 SUM(ds.total_quantity)         AS total_30d_sales
             FROM products p
             JOIN daily_sales ds ON ds.product_id = p.id
-            WHERE ds.sale_date >= CURRENT_DATE - INTERVAL '30 days'
+            WHERE ds.sale_date >= date('now', '-30 days')
             GROUP BY p.id
             HAVING AVG(ds.total_quantity) > 0
         """)
@@ -90,19 +90,19 @@ class AlertService:
         sql = text("""
             SELECT
                 product_id,
-                AVG(CASE WHEN sale_date >= CURRENT_DATE - INTERVAL '7 days'
+                AVG(CASE WHEN sale_date >= date('now', '-7 days')
                          THEN total_quantity END) AS recent_7d_avg,
-                AVG(CASE WHEN sale_date BETWEEN CURRENT_DATE - INTERVAL '30 days'
-                                              AND CURRENT_DATE - INTERVAL '8 days'
+                AVG(CASE WHEN sale_date BETWEEN date('now', '-30 days')
+                                              AND date('now', '-8 days')
                          THEN total_quantity END) AS prior_avg
             FROM daily_sales
-            WHERE sale_date >= CURRENT_DATE - INTERVAL '30 days'
+            WHERE sale_date >= date('now', '-30 days')
             GROUP BY product_id
             HAVING
-                AVG(CASE WHEN sale_date >= CURRENT_DATE - INTERVAL '7 days'
+                AVG(CASE WHEN sale_date >= date('now', '-7 days')
                          THEN total_quantity END) IS NOT NULL
-                AND AVG(CASE WHEN sale_date BETWEEN CURRENT_DATE - INTERVAL '30 days'
-                                               AND CURRENT_DATE - INTERVAL '8 days'
+                AND AVG(CASE WHEN sale_date BETWEEN date('now', '-30 days')
+                                               AND date('now', '-8 days')
                          THEN total_quantity END) > 0
         """)
         rows = self.db.execute(sql).fetchall()
@@ -134,9 +134,9 @@ class AlertService:
         sql = text("""
             SELECT
                 product_id,
-                AVG(total_quantity)::FLOAT AS avg_qty
+                CAST(AVG(total_quantity) AS FLOAT) AS avg_qty
             FROM daily_sales
-            WHERE sale_date >= CURRENT_DATE - INTERVAL '30 days'
+            WHERE sale_date >= date('now', '-30 days')
             GROUP BY product_id
         """)
         rows = self.db.execute(sql).fetchall()

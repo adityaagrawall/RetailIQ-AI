@@ -11,6 +11,7 @@ from app.config.settings import settings
 from app.models.upload import Upload
 from app.repositories.product_repo import ProductRepository
 from app.repositories.transaction_repo import TransactionRepository
+from sqlalchemy import text
 from app.utils.csv_validator import validate_and_clean
 from app.utils.security import (
     sanitize_filename,
@@ -29,13 +30,25 @@ class UploadService:
         self.transaction_repo = TransactionRepository(db)
 
     def create_upload_record(self, filename: str, file_size: int) -> Upload:
+        # If this is the first upload or we want it active, set is_active
+        is_first = self.db.query(Upload).count() == 0
+        
+        # Make all others inactive
+        self.db.query(Upload).update({"is_active": False})
+        
         upload = Upload(
             filename=sanitize_filename(filename),
             file_size=file_size,
             status="pending",
+            is_active=True
         )
         self.db.add(upload)
         self.db.commit()
+        
+        # Delete old daily_sales so it populates cleanly
+        self.db.execute(text("DELETE FROM daily_sales"))
+        self.db.commit()
+        
         self.db.refresh(upload)
         return upload
 
@@ -127,6 +140,52 @@ class UploadService:
 
     def get_status(self, upload_id: int) -> Optional[Upload]:
         return self.db.query(Upload).filter(Upload.id == upload_id).first()
+
+    def get_all_uploads(self) -> list[Upload]:
+        return self.db.query(Upload).order_by(Upload.uploaded_at.desc()).all()
+
+    def set_active_upload(self, upload_id: int):
+        self.db.query(Upload).update({"is_active": False})
+        self.db.query(Upload).filter(Upload.id == upload_id).update({"is_active": True})
+        self.db.commit()
+        # To truly switch, we wipe daily_sales and re-aggregate
+        self.db.execute(text("DELETE FROM daily_sales"))
+        self.db.commit()
+        self.transaction_repo.aggregate_daily_sales(upload_id)
+
+    def delete_upload(self, upload_id: int):
+        upload = self.get_status(upload_id)
+        if not upload:
+            return False
+        
+        # We delete all transactions for this upload
+        self.db.execute(text("DELETE FROM transactions WHERE upload_id = :uid"), {"uid": upload_id})
+        self.db.execute(text("DELETE FROM ai_insights"))
+        self.db.execute(text("DELETE FROM forecasts"))
+        self.db.delete(upload)
+        self.db.commit()
+        
+        if upload.is_active:
+            self.db.execute(text("DELETE FROM daily_sales"))
+            self.db.commit()
+            
+            # Find next active
+            next_upload = self.db.query(Upload).order_by(Upload.uploaded_at.desc()).first()
+            if next_upload:
+                self.set_active_upload(next_upload.id)
+        return True
+
+    def load_demo_data(self):
+        demo_path = os.path.join(os.getcwd(), "data", "demo.csv")
+        if not os.path.exists(demo_path):
+            raise ValueError("Demo dataset not found.")
+        
+        with open(demo_path, "rb") as f:
+            content = f.read()
+            
+        upload = self.create_upload_record("demo_dataset.csv", len(content))
+        self.process_upload(upload.id, content, "demo_dataset.csv")
+        return upload
 
     def _update_status(self, upload_id: int, status: str, error_message: str = None):
         update = {"status": status}

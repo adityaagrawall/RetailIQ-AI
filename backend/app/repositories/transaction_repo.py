@@ -7,6 +7,7 @@ import pandas as pd
 from app.models.transaction import Transaction
 from app.models.daily_sales import DailySales
 from app.models.product import Product
+from app.models.upload import Upload
 
 
 class TransactionRepository:
@@ -85,7 +86,10 @@ class TransactionRepository:
                 func.cast(Transaction.is_return, Integer) if False else
                 func.case((Transaction.is_return == True, 1), else_=0)
             ).label("return_count"),
-        ).filter(Transaction.quantity > 0)
+        ).join(Transaction.upload).filter(
+            Transaction.quantity > 0,
+            Upload.is_active == True
+        )
 
         if start_date:
             query = query.filter(Transaction.invoice_date >= start_date)
@@ -103,20 +107,21 @@ class TransactionRepository:
     def get_revenue_trend(self, granularity: str = "daily") -> List[dict]:
         """Return revenue aggregated by day/week/month."""
         if granularity == "weekly":
-            trunc = "week"
+            trunc_expr = "strftime('%Y-%W', invoice_date)"
         elif granularity == "monthly":
-            trunc = "month"
+            trunc_expr = "strftime('%Y-%m', invoice_date)"
         else:
-            trunc = "day"
+            trunc_expr = "DATE(invoice_date)"
 
         sql = text(f"""
             SELECT
-                DATE_TRUNC('{trunc}', invoice_date)::DATE AS period,
+                {trunc_expr} AS period,
                 SUM(revenue)                              AS revenue,
                 SUM(quantity)                             AS quantity,
                 COUNT(*)                                  AS transaction_count
             FROM transactions
             WHERE is_return = FALSE AND quantity > 0
+              AND upload_id = (SELECT id FROM uploads WHERE is_active = 1 LIMIT 1)
             GROUP BY period
             ORDER BY period
         """)
@@ -144,6 +149,7 @@ class TransactionRepository:
             FROM transactions t
             JOIN products p ON p.id = t.product_id
             WHERE t.is_return = FALSE AND t.quantity > 0
+              AND t.upload_id = (SELECT id FROM uploads WHERE is_active = 1 LIMIT 1)
             GROUP BY p.id, p.stock_code, p.description, p.abc_class
             ORDER BY total_revenue DESC
             LIMIT :n

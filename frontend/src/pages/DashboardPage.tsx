@@ -1,288 +1,179 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar
-} from 'recharts';
-import {
-  TrendingUp, TrendingDown, DollarSign, Package,
-  ShoppingCart, AlertTriangle, Sparkles, ArrowRight, RefreshCw
-} from 'lucide-react';
-import { getKPIs, getRevenueTrend, getTopProducts, getAlerts, getAISummary } from '../api';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getKPIs, getRevenueTrend, getAlerts } from '../api';
+import { AlertCircle, Clock } from 'lucide-react';
 import { clsx } from 'clsx';
-import { exportAlertsCSV } from '../api';
 
-// ─── Sub-components ────────────────────────────────────────────────────────────
-
-function StatCard({
-  label, value, sub, icon: Icon, trend, color = 'blue'
-}: {
-  label: string; value: string | number; sub?: string;
-  icon: React.ElementType; trend?: 'up' | 'down' | 'neutral';
-  color?: 'blue' | 'purple' | 'green' | 'amber';
-}) {
-  const colors = {
-    blue: 'text-accent-blue bg-accent-blue/10',
-    purple: 'text-accent-purple bg-accent-purple/10',
-    green: 'text-success bg-success/10',
-    amber: 'text-warning bg-warning/10',
-  };
+function OverviewMetric({ label, value, sub, hero }: { label: string; value: string | number; sub?: string; hero?: boolean }) {
   return (
-    <div className="stat-card">
-      <div className="flex items-start justify-between">
-        <div className={clsx('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', colors[color])}>
-          <Icon className="w-4 h-4" />
-        </div>
-        {trend && (
-          <span className={clsx('flex items-center gap-0.5 text-xs font-medium',
-            trend === 'up' ? 'text-success' : trend === 'down' ? 'text-danger' : 'text-text-muted'
-          )}>
-            {trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-          </span>
-        )}
-      </div>
-      <div className="mt-3">
-        <p className="text-2xl font-semibold text-text-primary tracking-tight">{value}</p>
-        <p className="text-xs text-text-secondary mt-0.5">{label}</p>
-        {sub && <p className="text-xs text-text-muted mt-1">{sub}</p>}
-      </div>
+    <div className="flex flex-col">
+      <span className="text-xs text-gray-500 mb-1 font-medium">{label}</span>
+      <span className={clsx("font-semibold text-gray-900 tracking-tight font-mono", hero ? "text-4xl" : "text-xl")}>{value}</span>
+      {sub && <span className="text-xs text-gray-400 mt-1">{sub}</span>}
     </div>
   );
 }
 
-function SkeletonCard() {
+const ChartTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
   return (
-    <div className="stat-card">
-      <div className="skeleton w-9 h-9 rounded-lg" />
-      <div className="mt-3 space-y-2">
-        <div className="skeleton h-7 w-24" />
-        <div className="skeleton h-3 w-32" />
-      </div>
+    <div className="bg-gray-900 text-white rounded shadow-md px-3 py-2 text-xs border border-gray-800">
+      <p className="text-gray-400 mb-1">{label}</p>
+      <p className="font-medium font-mono">£{(payload[0].value).toLocaleString()}</p>
     </div>
   );
-}
-
-// ─── Main Component ────────────────────────────────────────────────────────────
+};
 
 export default function DashboardPage() {
   const navigate = useNavigate();
 
-  const { data: kpis, isLoading: kpiLoading } = useQuery({
-    queryKey: ['kpis'],
-    queryFn: getKPIs,
-  });
-
+  const { data: kpis, isLoading: kpiLoading } = useQuery({ queryKey: ['kpis'], queryFn: getKPIs });
   const { data: trend, isLoading: trendLoading } = useQuery({
     queryKey: ['revenue-trend', 'weekly'],
     queryFn: () => getRevenueTrend('weekly'),
   });
-
-  const { data: topProducts, isLoading: topLoading } = useQuery({
-    queryKey: ['top-products', 10],
-    queryFn: () => getTopProducts(10),
+  const { data: alerts, isLoading: alertsLoading } = useQuery({
+    queryKey: ['alerts-dash'],
+    queryFn: () => getAlerts({ is_resolved: false, limit: 10 }),
+  });
+  
+  const { data: uploads, isLoading: uploadsLoading } = useQuery({
+    queryKey: ['uploads'],
+    queryFn: () => import('../api').then(m => m.getAllUploads()),
   });
 
-  const { data: alerts } = useQuery({
-    queryKey: ['alerts', { is_resolved: false }],
-    queryFn: () => getAlerts({ is_resolved: false, limit: 4 }),
-  });
+  const hasActiveDataset = uploads?.some((u: any) => u.is_active);
 
-  const { data: aiSummary, isLoading: aiLoading } = useQuery({
-    queryKey: ['ai-summary'],
-    queryFn: getAISummary,
-    retry: false, // Don't retry if Gemini key not set
-  });
-
-  const formatCurrency = (v: number) =>
+  const fmt = (v: number) =>
     v >= 1_000_000 ? `£${(v / 1_000_000).toFixed(2)}M`
     : v >= 1_000 ? `£${(v / 1_000).toFixed(1)}K`
-    : `£${v.toFixed(0)}`;
+    : `£${v?.toFixed(0) ?? 0}`;
 
   return (
-    <div className="space-y-6">
-      {/* ── KPI Grid ───────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {kpiLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-        ) : kpis ? (
-          <>
-            <StatCard
-              label="Total Revenue"
-              value={formatCurrency(kpis.total_revenue)}
-              sub={`${kpis.date_range_start} → ${kpis.date_range_end}`}
-              icon={DollarSign}
-              color="blue"
-              trend="up"
-            />
-            <StatCard
-              label="Avg Daily Revenue"
-              value={formatCurrency(kpis.avg_daily_revenue)}
-              sub={`${kpis.total_transactions?.toLocaleString()} transactions`}
-              icon={TrendingUp}
-              color="purple"
-              trend="up"
-            />
-            <StatCard
-              label="Products Tracked"
-              value={kpis.total_products?.toLocaleString()}
-              sub={`Return rate: ${kpis.return_rate_pct}%`}
-              icon={Package}
-              color="green"
-            />
-            <StatCard
-              label="Avg Order Value"
-              value={formatCurrency(kpis.avg_order_value)}
-              sub={`Top market: ${kpis.top_country}`}
-              icon={ShoppingCart}
-              color="amber"
-            />
-          </>
-        ) : (
-          <div className="col-span-4 card p-8 text-center">
-            <p className="text-text-muted">No data yet. <button className="text-accent-blue hover:underline" onClick={() => navigate('/upload')}>Upload your first dataset →</button></p>
+    <div className="flex flex-col lg:flex-row h-full">
+      {/* Empty State */}
+      {!uploadsLoading && !hasActiveDataset && (
+        <div className="absolute inset-0 bg-[#FBFBFA] z-40 flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-white border border-gray-200 shadow-sm rounded-xl p-12 max-w-md w-full">
+            <h2 className="text-xl font-semibold text-gray-900 tracking-tight mb-2">No dataset uploaded yet.</h2>
+            <p className="text-sm text-gray-500 mb-8">Upload a retail sales dataset to begin forecasting and business analysis.</p>
+            <button 
+              onClick={() => navigate('/upload')}
+              className="bg-gray-900 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm"
+            >
+              Upload Dataset
+            </button>
           </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        {/* ── Revenue Trend ──────────────────────────────────────── */}
-        <div className="xl:col-span-2 card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-text-primary">Revenue Trend</h2>
-            <span className="text-xs text-text-muted">Weekly</span>
-          </div>
-          {trendLoading ? (
-            <div className="skeleton h-56 w-full rounded" />
-          ) : trend?.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={trend} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="period" tick={{ fontSize: 11 }} tickFormatter={(v) => v.slice(5)} />
-                <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `£${(v/1000).toFixed(0)}k`} />
-                <Tooltip
-                  formatter={(v: number) => [`£${v.toLocaleString()}`, 'Revenue']}
-                  contentStyle={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8 }}
-                  labelStyle={{ color: '#A1A1AA' }}
-                />
-                <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fill="url(#revenueGrad)" strokeWidth={2} dot={false} />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-56 flex items-center justify-center text-text-muted text-sm">No revenue data</div>
-          )}
         </div>
+      )}
 
-        {/* ── AI Summary ─────────────────────────────────────────── */}
-        <div className="card p-5 flex flex-col">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-4 h-4 text-accent-purple" />
-            <h2 className="text-sm font-semibold text-text-primary">AI Daily Summary</h2>
-            {aiSummary?.from_cache && (
-              <span className="text-[10px] text-text-muted ml-auto">cached</span>
+      {/* ── Main Content Area ── */}
+      <div className="flex-1 flex flex-col min-w-0 border-r border-gray-200">
+        
+        {/* Header w/ Metadata */}
+        <div className="p-8 border-b border-gray-200 bg-white">
+          <div className="flex items-start justify-between mb-8">
+            <h1 className="text-xl font-semibold text-gray-900 tracking-tight">Overview</h1>
+            <div className="flex items-center gap-4 text-xs text-gray-500">
+              <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-green-500" /> System Operational</div>
+              <div className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Data Refreshed 10m ago</div>
+              <div className="px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-mono">Model: XGBoost v1.2</div>
+            </div>
+          </div>
+          
+          {/* Asymmetric KPIs */}
+          <div className="flex flex-col md:flex-row gap-10 items-start">
+            {kpiLoading ? (
+              <div className="animate-pulse h-16 w-32 bg-gray-100 rounded" />
+            ) : kpis ? (
+              <>
+                {/* Hero Metric */}
+                <div className="md:w-1/3">
+                  <OverviewMetric hero label="Net Revenue" value={fmt(kpis.total_revenue)} sub="Lifetime GMV" />
+                </div>
+                {/* Secondary Metrics */}
+                <div className="flex-1 grid grid-cols-3 gap-6 border-l border-gray-100 pl-10">
+                  <OverviewMetric label="Avg Daily Revenue" value={fmt(kpis.avg_daily_revenue)} sub={`${kpis.total_transactions?.toLocaleString()} orders`} />
+                  <OverviewMetric label="Tracked SKUs" value={kpis.total_products?.toLocaleString()} sub="Active catalog" />
+                  <OverviewMetric label="Avg Order Value" value={fmt(kpis.avg_order_value)} sub="Per transaction" />
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-gray-500 py-4">No metrics available. Upload a dataset to begin processing.</div>
             )}
           </div>
-          {aiLoading ? (
-            <div className="space-y-2 flex-1">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className={clsx('skeleton h-3', i % 3 === 2 ? 'w-3/4' : 'w-full')} />
-              ))}
-            </div>
-          ) : aiSummary ? (
-            <p className="text-xs text-text-secondary leading-relaxed flex-1">{aiSummary.summary}</p>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
-              <Sparkles className="w-8 h-8 text-text-muted" />
-              <p className="text-xs text-text-muted">Configure GEMINI_API_KEY to enable AI insights</p>
-              <button className="btn-secondary text-xs py-1" onClick={() => navigate('/ai')}>
-                Open AI Assistant
-              </button>
-            </div>
-          )}
-          {aiSummary && (
-            <button
-              className="btn-ghost mt-3 text-xs justify-center"
-              onClick={() => navigate('/ai')}
-            >
-              Ask a question <ArrowRight className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {/* ── Top Products ───────────────────────────────────────── */}
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-text-primary">Top Products by Revenue</h2>
-            <button className="btn-ghost text-xs" onClick={() => navigate('/products')}>
-              View all <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-          {topLoading ? (
-            <div className="skeleton h-48 w-full rounded" />
-          ) : topProducts?.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={topProducts.slice(0, 8)} layout="vertical" margin={{ left: 80, right: 8, top: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 10 }} tickFormatter={(v) => `£${(v/1000).toFixed(0)}k`} />
-                <YAxis type="category" dataKey="description" tick={{ fontSize: 10 }} width={80} tickFormatter={(v: string) => v?.slice(0, 14) + (v?.length > 14 ? '…' : '')} />
-                <Tooltip
-                  formatter={(v: number) => [`£${v.toLocaleString()}`, 'Revenue']}
-                  contentStyle={{ background: '#18181B', border: '1px solid #27272A', borderRadius: 8 }}
-                />
-                <Bar dataKey="total_revenue" fill="#3B82F6" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-text-muted text-sm">No product data</div>
-          )}
         </div>
 
-        {/* ── Recent Alerts ──────────────────────────────────────── */}
-        <div className="card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-text-primary">Active Alerts</h2>
-            <button className="btn-ghost text-xs" onClick={() => navigate('/alerts')}>
-              View all <ArrowRight className="w-3 h-3" />
-            </button>
+        {/* Chart Area */}
+        <div className="flex-1 p-8 flex flex-col min-h-[400px] bg-white">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-sm font-semibold text-gray-900 tracking-tight">Revenue Velocity</h2>
+            <span className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded border border-gray-200">Weekly Aggregation</span>
           </div>
-          <div className="space-y-2">
-            {alerts && alerts.length > 0 ? (
-              alerts.slice(0, 4).map((alert: any) => (
-                <div
-                  key={alert.id}
-                  className={clsx('card p-3 cursor-pointer', `alert-${alert.severity}`)}
-                  onClick={() => navigate('/alerts')}
-                >
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className={clsx(
-                      'w-3.5 h-3.5 mt-0.5 flex-shrink-0',
-                      alert.severity === 'high' ? 'text-danger' : alert.severity === 'medium' ? 'text-warning' : 'text-success'
-                    )} />
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-text-primary truncate">{alert.description || alert.stock_code}</p>
-                      <p className="text-xs text-text-muted mt-0.5 line-clamp-1">{alert.message}</p>
-                    </div>
-                    <span className={clsx('badge flex-shrink-0', `badge-${alert.severity}`)}>
-                      {alert.severity}
-                    </span>
-                  </div>
-                </div>
-              ))
+          <div className="flex-1 w-full relative">
+            {trendLoading ? (
+              <div className="absolute inset-0 animate-pulse bg-gray-50 rounded" />
+            ) : trend?.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trend} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="gBlack" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#111827" stopOpacity={0.06} />
+                      <stop offset="100%" stopColor="#111827" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} stroke="#F3F4F6" strokeDasharray="3 3" />
+                  <XAxis dataKey="period" tickLine={false} axisLine={false} tickFormatter={v => v?.slice(5)} />
+                  <YAxis tickLine={false} axisLine={false} tickFormatter={v => `£${(v/1000).toFixed(0)}k`} />
+                  <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#E5E7EB', strokeWidth: 1 }} />
+                  <Area type="monotone" dataKey="revenue" stroke="#111827" strokeWidth={1.5} fill="url(#gBlack)" dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: '#111827' }} />
+                </AreaChart>
+              </ResponsiveContainer>
             ) : (
-              <div className="h-48 flex items-center justify-center flex-col gap-2 text-center">
-                <AlertTriangle className="w-8 h-8 text-text-muted" />
-                <p className="text-sm text-text-muted">No active alerts</p>
-                <p className="text-xs text-text-muted">Upload data to generate alerts</p>
+              <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400 bg-gray-50 rounded border border-dashed border-gray-200">
+                Awaiting transaction data for velocity analysis
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* ── Exceptions Sidebar ── */}
+      <div className="w-full lg:w-80 flex-shrink-0 bg-[#FBFBFA] flex flex-col h-full border-l border-white">
+        <div className="px-5 py-4 border-b border-gray-200 flex justify-between items-center sticky top-0 bg-[#FBFBFA]">
+          <h2 className="text-sm font-semibold text-gray-900 tracking-tight">Operational Exceptions</h2>
+          {alerts?.length > 0 && (
+            <span className="text-xs font-mono bg-gray-200 text-gray-900 px-1.5 py-0.5 rounded">{alerts.length}</span>
+          )}
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {alertsLoading ? (
+             Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="animate-pulse h-16 bg-white border border-gray-200 rounded" />
+             ))
+          ) : alerts?.length > 0 ? (
+            alerts.map((a: any) => (
+              <div key={a.id} className="bg-white border border-gray-200 rounded p-3 hover:border-gray-300 transition-colors cursor-pointer shadow-sm" onClick={() => navigate(`/inventory/${a.product_id}`)}>
+                <div className="flex items-start gap-2.5">
+                  <AlertCircle className={clsx('w-3.5 h-3.5 mt-0.5 flex-shrink-0', 
+                    a.severity === 'high' ? 'text-red-500' : 
+                    a.severity === 'medium' ? 'text-amber-500' : 'text-gray-400'
+                  )} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-mono font-medium text-gray-900 truncate">{a.stock_code}</p>
+                    <p className="text-[11px] text-gray-500 mt-1 leading-snug line-clamp-2">{a.message}</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="flex flex-col items-center justify-center text-center py-12 px-4 h-full border border-dashed border-gray-200 bg-white rounded">
+              <p className="text-sm font-medium text-gray-900">No active exceptions.</p>
+              <p className="text-xs text-gray-500 mt-1">Inventory operating within nominal parameters.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

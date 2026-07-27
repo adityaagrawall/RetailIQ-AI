@@ -1,9 +1,8 @@
 from app.config.database import Base
 from sqlalchemy import (
     Column, Integer, String, Numeric, DateTime,
-    Text, func
+    Text, JSON, func
 )
-from sqlalchemy.dialects.postgresql import JSONB
 
 
 class MLRun(Base):
@@ -18,7 +17,7 @@ class MLRun(Base):
     mae = Column(Numeric(10, 4))
     rmse = Column(Numeric(10, 4))
     mape = Column(Numeric(10, 4))
-    parameters = Column(JSONB)           # Store hyperparameters as JSON
+    parameters = Column(JSON)            # Store hyperparameters as JSON
     artifact_path = Column(Text)         # Path to saved model file
     status = Column(String(20), default="pending", index=True)  # pending/running/completed/failed
     error_message = Column(Text)

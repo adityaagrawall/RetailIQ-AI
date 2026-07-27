@@ -16,6 +16,26 @@ export const getUploadStatus = async (uploadId: number) => {
   return data;
 };
 
+export const getAllUploads = async () => {
+  const { data } = await api.get('/upload');
+  return data;
+};
+
+export const setActiveUpload = async (uploadId: number) => {
+  const { data } = await api.post(`/upload/${uploadId}/active`);
+  return data;
+};
+
+export const deleteUpload = async (uploadId: number) => {
+  const { data } = await api.delete(`/upload/${uploadId}`);
+  return data;
+};
+
+export const loadDemoDataset = async () => {
+  const { data } = await api.post('/upload/demo');
+  return data;
+};
+
 // ─── Analytics ─────────────────────────────────────────────────────────────────
 
 export const getKPIs = async (params?: { start_date?: string; end_date?: string }) => {

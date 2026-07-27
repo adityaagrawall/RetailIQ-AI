@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from typing import Optional
 from sqlalchemy.orm import Session
+import google.generativeai as genai
 
 from app.repositories.ai_insight_repo import AIInsightRepository
 from app.utils.security import compute_context_hash
@@ -34,7 +35,6 @@ class AIService:
         """Lazy-load Gemini client to avoid import errors if key is missing."""
         if not settings.gemini_api_key:
             raise ValueError("GEMINI_API_KEY is not configured. Add it to your .env file.")
-        import google.generativeai as genai
         genai.configure(api_key=settings.gemini_api_key)
         return genai.GenerativeModel(settings.gemini_model)
 
@@ -91,7 +91,8 @@ class AIService:
             SELECT DATE(invoice_date), SUM(revenue), SUM(quantity)
             FROM transactions
             WHERE quantity > 0 AND is_return = FALSE
-              AND invoice_date >= CURRENT_DATE - INTERVAL '7 days'
+              AND invoice_date >= date('now', '-7 days')
+              AND upload_id = (SELECT id FROM uploads WHERE is_active = 1 LIMIT 1)
             GROUP BY DATE(invoice_date)
             ORDER BY 1
         """)).fetchall()

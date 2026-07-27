@@ -1,238 +1,107 @@
-# RetailIQ AI — Intelligent Demand Forecasting & Inventory Analytics Platform
+<div align="center">
 
-> **A production-quality retail analytics platform** built with FastAPI, React/TypeScript, PostgreSQL, Prophet, XGBoost, and Google Gemini AI.
+# 🛍️ RetailIQ AI
 
-[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-green)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18-blue)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)](https://typescriptlang.org)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)](https://postgresql.org)
+**Intelligent Demand Forecasting & Retail Operations Platform**
 
----
+[![Status: Production Ready](https://img.shields.io/badge/Status-Production%20Ready-success?style=for-the-badge)]()
+[![Powered by Gemini](https://img.shields.io/badge/Powered_by-Google_Gemini-blue?style=for-the-badge&logo=google)]()
+[![Stack: React & FastAPI](https://img.shields.io/badge/Stack-React%20%7C%20FastAPI-black?style=for-the-badge)]()
 
-## 🎯 What It Does
+*Transform raw transactional data into actionable retail intelligence.*
 
-RetailIQ AI ingests retail transaction data (UCI Online Retail II format) and delivers:
-
-- **Demand Forecasting** — 30-day forecasts using Meta Prophet and XGBoost with 95% confidence intervals
-- **ABC Analysis** — Classifies 4,000+ SKUs by revenue contribution (A=top 80%, B=next 15%, C=bottom 5%)
-- **Inventory Alerts** — Statistically-grounded reorder point calculation using safety stock formula
-- **Slow-Mover Detection** — IQR-based anomaly detection on sales velocity
-- **AI Assistant** — Natural language Q&A over your inventory data (Google Gemini)
-- **Executive Summaries** — AI-generated daily performance summaries
+</div>
 
 ---
 
-## 🚀 Quick Start
+## 🚨 The Problem
 
-### Prerequisites
-- Docker & Docker Compose
-- [UCI Online Retail II dataset](https://archive.ics.uci.edu/dataset/502/online+retail+ii)
-- Google Gemini API key (free at [aistudio.google.com](https://aistudio.google.com/app/apikey))
+Modern retail businesses sit on mountains of transactional data but often lack the specialized engineering resources to extract real value from it. 
 
-### 1. Clone and Configure
+Inventory managers rely on outdated spreadsheets, gut feelings, or highly expensive enterprise software to predict demand. This leads to two massive problems that kill profit margins:
+1. **Stockouts**: Running out of popular items, resulting in lost revenue and angry customers.
+2. **Overstocking**: Tying up capital in dead inventory that sits in warehouses collecting dust.
 
-```bash
-git clone https://github.com/yourusername/retailiq-ai.git
-cd retailiq-ai
-cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
-```
+## 💡 The Solution
 
-### 2. Start Everything
+**RetailIQ AI** is an intelligent, automated platform built for non-technical operations managers. 
 
-```bash
-docker-compose up --build
-```
+It automatically ingests raw sales data, trains predictive machine learning models, and translates complex analytics into plain-English executive summaries using Generative AI. 
 
-### 3. Open the App
-
-| Service | URL |
-|---|---|
-| 🌐 Frontend | http://localhost:3000 |
-| 📚 API Docs | http://localhost:8000/docs |
-| 🔍 ReDoc | http://localhost:8000/redoc |
-| 💓 Health | http://localhost:8000/health |
+No SQL required. No spreadsheets. Just answers.
 
 ---
 
-## 🛠️ Local Development (No Docker)
+## ✨ Key Features
 
-### Backend
+### 📈 Automated Demand Forecasting
+Upload a standard CSV of your past sales, and RetailIQ automatically trains time-series models (XGBoost/Prophet) to project product demand 30, 60, or 90 days into the future. 
 
-```bash
-cd backend
-python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
+### ⚠️ Smart Inventory Alerts
+Stop reacting to stockouts. RetailIQ calculates dynamic safety stock levels based on your specific lead times and flags products that are at risk of running out *before* it happens.
 
-# Set up PostgreSQL and run migrations
-alembic upgrade head
+### 🧠 Generative AI Business Insights
+Don't have time to stare at charts? Our AI Engine (powered by Google Gemini) reads your entire dashboard and writes a daily executive summary explaining *why* sales are moving and *what* actions you need to take today.
 
-# Start server
-uvicorn app.main:app --reload
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-# → http://localhost:5173
-```
+### 📦 ABC Classification & Slow-Mover Detection
+Automatically categorize your catalog. Know exactly which products drive 80% of your revenue (Class A) and automatically flag "slow-movers" that are tying up capital so you can liquidate or discount them.
 
 ---
 
-## 📊 Dataset
+## 🔄 How It Works
 
-This project is designed for the **[UCI Online Retail II Dataset](https://archive.ics.uci.edu/dataset/502/online+retail+ii)**:
+RetailIQ is designed to be frictionless. The entire workflow takes less than a minute.
 
-- **500,000+ transactions** from a UK-based e-commerce retailer (2009-2011)
-- **~4,000 unique SKUs**
-- Columns: InvoiceNo, StockCode, Description, Quantity, InvoiceDate, Price, Customer ID, Country
-
-Upload the Excel file (.xlsx) directly through the UI.
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────┐    REST API    ┌──────────────────────────┐
-│  React +    │ ──────────── ▶ │  FastAPI Backend          │
-│  TypeScript │               │  routes → services →      │
-│  Recharts   │               │  repositories → models    │
-└─────────────┘               └──────────┬───────────────┘
-                                         │
-                              ┌──────────▼───────────────┐
-                              │  PostgreSQL 15           │
-                              │  8 tables, 15+ indexes   │
-                              └──────────┬───────────────┘
-                                         │
-                              ┌──────────▼───────────────┐
-                              │  ML Pipeline              │
-                              │  Prophet + XGBoost        │
-                              │  KMeans + IQR Anomaly     │
-                              └──────────┬───────────────┘
-                                         │
-                              ┌──────────▼───────────────┐
-                              │  Google Gemini Flash      │
-                              │  NL Q&A + Summaries       │
-                              └──────────────────────────┘
-```
+1. **Upload Dataset**: Drop in your standard transactional log (Invoice No, Stock Code, Quantity, Price, Date).
+2. **Data Pipeline**: The system cleanses the data, imputes missing values, and engineers temporal features.
+3. **Machine Learning**: Demand models are trained and RMSE bounds are evaluated in the background.
+4. **Insights Generation**: View beautifully rendered charts, inventory alerts, and AI-generated executive summaries.
 
 ---
 
-## 🔌 API Reference
+## 📸 Platform Preview
 
-Full auto-generated docs at `/docs`. Key endpoints:
+> **Dashboard & KPIs**
+> Track Net Revenue, Average Order Value, Return Rates, and top-selling products in real-time.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/v1/upload` | Upload CSV/XLSX file |
-| GET | `/api/v1/analytics/kpis` | Dashboard KPIs |
-| GET | `/api/v1/analytics/abc` | ABC analysis |
-| POST | `/api/v1/forecasts/train` | Train Prophet/XGBoost |
-| GET | `/api/v1/forecasts/{product_id}` | Product forecast |
-| POST | `/api/v1/ai/query` | Natural language Q&A |
-| GET | `/api/v1/ai/summary` | Daily AI summary |
-| GET | `/api/v1/alerts` | Inventory alerts |
-| GET | `/api/v1/export/forecasts` | Export CSV |
+> **Inventory Operations**
+> View dynamic reorder points, current stock levels, and safety stock recommendations per product.
+
+> **AI Analyst**
+> Ask natural language questions like *"Why did revenue drop last week?"* or *"Which products should I reorder today?"* and get data-driven answers.
 
 ---
 
-## 🤖 Machine Learning
+## 🚀 Getting Started (For Developers)
 
-### Models Used
+While the platform is built for business users, setting it up requires a brief technical deployment.
 
-| Model | Purpose | Why |
-|---|---|---|
-| **Prophet (Meta)** | Demand Forecasting | Handles retail seasonality + holidays natively |
-| **XGBoost** | Feature-based Forecasting | 16 engineered features, handles promotions |
-| **KMeans** | Product Segmentation | Group products by sales behavior |
-| **IQR** | Slow-Mover Detection | Non-parametric, interpretable, no training needed |
+**Requirements**: Node.js (v18+), Python (3.10+), and a Google Gemini API Key.
 
-### Evaluation Metrics
-- **MAE** — Mean Absolute Error (units sold)
-- **RMSE** — Root Mean Squared Error
-- **MAPE** — Mean Absolute Percentage Error (business-interpretable)
+1. **Clone & Install Backend**:
+   ```bash
+   cd backend
+   python -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+2. **Configure Environment**:
+   Rename `backend/.env.example` to `backend/.env` and insert your Gemini API Key.
+3. **Run Backend**:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+4. **Run Frontend**:
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-### Reorder Point Formula
-```
-Reorder Point = (avg_daily_sales × lead_time) + safety_stock
-Safety Stock  = Z × σ_daily_sales × √lead_time
-Z = 1.65  (95% service level)
-```
-
----
-
-## 🔒 Security
-
-- CSV injection prevention (strips leading `=`, `+`, `-`, `@`)
-- File magic byte validation (not just extension check)
-- Rate limiting: 5 uploads/hour, 30 AI queries/hour
-- CORS allowlist (no wildcards in production)
-- Structured JSON logging (no PII/secrets logged)
-- Non-root Docker user
-- SQL injection prevention via SQLAlchemy ORM
+*(Includes a one-click `Demo Mode` to instantly populate the platform with sample data for evaluation!)*
 
 ---
 
-## 📁 Project Structure
-
-```
-retailiq-ai/
-├── backend/
-│   ├── app/
-│   │   ├── main.py          # FastAPI app entry point
-│   │   ├── config/          # Settings, DB connection
-│   │   ├── models/          # SQLAlchemy ORM (8 models)
-│   │   ├── schemas/         # Pydantic validation
-│   │   ├── routes/          # HTTP layer (7 routers)
-│   │   ├── services/        # Business logic
-│   │   ├── repositories/    # Database access layer
-│   │   ├── ml/              # ML pipeline
-│   │   └── utils/           # Security, logging, CSV validation
-│   └── alembic/             # Database migrations
-├── frontend/
-│   └── src/
-│       ├── api/             # Axios client + endpoint functions
-│       ├── components/      # Shared components (Layout)
-│       └── pages/           # 8 full pages
-├── docker-compose.yml
-└── .env.example
-```
-
----
-
-## 📈 Resume Bullet Points (Generated from This Project)
-
-```
-• Built RetailIQ AI, a full-stack demand forecasting platform using FastAPI, React/TypeScript, 
-  and PostgreSQL processing 500K+ retail transactions with 30-day forecasts (Prophet + XGBoost)
-
-• Engineered a 7-stage ML pipeline achieving sub-10% MAPE; implemented ABC inventory analysis 
-  classifying 4,000+ SKUs and IQR-based slow-mover detection
-
-• Integrated Google Gemini API for natural-language inventory Q&A with SHA-256-keyed response 
-  caching; designed 20+ RESTful endpoints with Pydantic validation and OpenAPI documentation
-
-• Containerized full stack with Docker Compose; implemented layered architecture (routes → 
-  services → repositories) with Alembic migrations and composite PostgreSQL indexes
-```
-
----
-
-## 🛣️ Roadmap (Future Enhancements)
-
-- [ ] User authentication (JWT)
-- [ ] Multi-store comparison
-- [ ] Automated reorder email alerts
-- [ ] Streamlit alternative UI
-- [ ] Deploy to Render.com / Railway
-
----
-
-## 📄 License
-
-MIT
+<div align="center">
+<i>Built to make enterprise-grade retail analytics accessible to everyone.</i>
+</div>

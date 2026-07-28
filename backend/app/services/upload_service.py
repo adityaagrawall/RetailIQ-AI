@@ -173,6 +173,8 @@ class UploadService:
         self.db.execute(text("DELETE FROM ai_insights"))
         self.db.execute(text("DELETE FROM forecasts"))
         self.db.delete(upload)
+        # Delete any orphaned products that no longer have transactions
+        self.db.execute(text("DELETE FROM products WHERE id NOT IN (SELECT DISTINCT product_id FROM transactions)"))
         self.db.commit()
         
         if upload.is_active:

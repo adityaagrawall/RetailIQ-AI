@@ -28,7 +28,7 @@ class ProductRepository:
                 func.avg(DailySales.total_quantity).label("avg_daily_sales"),
                 func.max(DailySales.sale_date).label("last_sale_date"),
             )
-            .outerjoin(DailySales, Product.id == DailySales.product_id)
+            .join(DailySales, Product.id == DailySales.product_id)
             .group_by(Product.id)
         )
 

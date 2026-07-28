@@ -168,6 +168,8 @@ class UploadService:
         if not upload:
             return False
         
+        is_was_active = upload.is_active
+        
         # We delete all transactions for this upload
         self.db.execute(text("DELETE FROM transactions WHERE upload_id = :uid"), {"uid": upload_id})
         self.db.execute(text("DELETE FROM ai_insights"))
@@ -177,7 +179,7 @@ class UploadService:
         self.db.execute(text("DELETE FROM products WHERE id NOT IN (SELECT DISTINCT product_id FROM transactions)"))
         self.db.commit()
         
-        if upload.is_active:
+        if is_was_active:
             self.db.execute(text("DELETE FROM daily_sales"))
             self.db.commit()
             

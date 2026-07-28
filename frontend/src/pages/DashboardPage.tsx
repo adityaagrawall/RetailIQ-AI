@@ -20,7 +20,7 @@ const ChartTooltip = ({ active, payload, label }: any) => {
   return (
     <div className="bg-gray-900 text-white rounded shadow-md px-3 py-2 text-xs border border-gray-800">
       <p className="text-gray-400 mb-1">{label}</p>
-      <p className="font-medium font-mono">£{(payload[0].value).toLocaleString()}</p>
+      <p className="font-medium font-mono">₹{(payload[0].value).toLocaleString()}</p>
     </div>
   );
 };
@@ -46,12 +46,15 @@ export default function DashboardPage() {
     queryFn: () => import('../api').then(m => m.getAllUploads()),
   });
 
-  const hasActiveDataset = uploads?.some((u: any) => u.is_active);
+  const fmt = (v?: number) => {
+    if (v === undefined || v === null) return "₹0";
+    return v >= 1_000_000_000 ? `₹${(v / 1_000_000_000).toFixed(2)}B`
+    : v >= 1_000_000 ? `₹${(v / 1_000_000).toFixed(2)}M`
+    : v >= 1_000 ? `₹${(v / 1_000).toFixed(1)}K`
+    : `₹${v?.toFixed(0) ?? 0}`;
+  };
 
-  const fmt = (v: number) =>
-    v >= 1_000_000 ? `£${(v / 1_000_000).toFixed(2)}M`
-    : v >= 1_000 ? `£${(v / 1_000).toFixed(1)}K`
-    : `£${v?.toFixed(0) ?? 0}`;
+  const hasActiveDataset = uploads?.some((u: any) => u.is_active);
 
   return (
     <div className="flex flex-col lg:flex-row h-full">
@@ -128,7 +131,7 @@ export default function DashboardPage() {
                   </defs>
                   <CartesianGrid vertical={false} stroke="#F3F4F6" strokeDasharray="3 3" />
                   <XAxis dataKey="period" tickLine={false} axisLine={false} tickFormatter={v => v?.slice(5)} />
-                  <YAxis tickLine={false} axisLine={false} tickFormatter={v => `£${(v/1000).toFixed(0)}k`} />
+                  <YAxis tickLine={false} axisLine={false} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
                   <Tooltip content={<ChartTooltip />} cursor={{ stroke: '#E5E7EB', strokeWidth: 1 }} />
                   <Area type="monotone" dataKey="revenue" stroke="#111827" strokeWidth={1.5} fill="url(#gBlack)" dot={false} activeDot={{ r: 4, strokeWidth: 0, fill: '#111827' }} />
                 </AreaChart>

@@ -43,7 +43,7 @@ export default function ProductDetailPage() {
     setGeneratingReport(false);
   };
 
-  const fmt = (v: number) => v >= 1_000 ? `£${(v/1_000).toFixed(1)}K` : `£${v?.toFixed(0)}`;
+  const fmt = (v: number) => v >= 1_000 ? `₹${(v/1_000).toFixed(1)}K` : `₹${v?.toFixed(0)}`;
 
   if (pl) return (
     <div className="p-8 max-w-5xl mx-auto animate-pulse">

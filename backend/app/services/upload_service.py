@@ -82,7 +82,18 @@ class UploadService:
             # 1. Parse
             ext = os.path.splitext(filename)[1].lower()
             if ext == ".xlsx":
-                df_raw = pd.read_excel(io.BytesIO(content))
+                from app.utils.tally_extractor import extract_tally_excel
+                try:
+                    df_raw = extract_tally_excel(content)
+                    # If it's tally, we can skip standard validation as it's already mapped
+                    df_clean = df_raw
+                    validation_errors = []
+                    self._update_upload(upload_id, row_count=len(df_raw))
+                except Exception as e:
+                    logger.warning(f"Tally extraction failed, falling back to standard excel: {e}")
+                    df_raw = pd.read_excel(io.BytesIO(content))
+                    self._update_upload(upload_id, row_count=len(df_raw))
+                    df_clean, validation_errors = validate_and_clean(df_raw)
             else:
                 # Try UTF-8 first, fall back to latin-1
                 try:
@@ -90,10 +101,9 @@ class UploadService:
                 except UnicodeDecodeError:
                     df_raw = pd.read_csv(io.StringIO(content.decode("latin-1")))
 
-            self._update_upload(upload_id, row_count=len(df_raw))
-
-            # 2. Validate & clean
-            df_clean, validation_errors = validate_and_clean(df_raw)
+                self._update_upload(upload_id, row_count=len(df_raw))
+                # 2. Validate & clean
+                df_clean, validation_errors = validate_and_clean(df_raw)
             fatal_errors = [e for e in validation_errors if e.get("fatal")]
             if fatal_errors:
                 error_msg = "; ".join(e["message"] for e in fatal_errors)

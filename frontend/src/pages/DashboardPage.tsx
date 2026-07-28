@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -31,10 +32,6 @@ export default function DashboardPage() {
   const { data: kpis, isLoading: kpiLoading } = useQuery<any>({
     queryKey: ['kpis'],
     queryFn: () => getKPIs(),
-  });
-  const { data: trend, isLoading: trendLoading } = useQuery({
-    queryKey: ['revenue-trend', 'weekly'],
-    queryFn: () => getRevenueTrend('weekly'),
   });
 
   const { data: alerts, isLoading: alertsLoading } = useQuery({
@@ -177,7 +174,7 @@ export default function DashboardPage() {
               <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-400 bg-gray-50 rounded border border-dashed border-gray-200">
                 Awaiting transaction data for velocity analysis
               </div>
-          </div>
+            )}
         </div>
 
         {/* ── Product Performance Insights (Owner Breakdown) ── */}
@@ -224,6 +221,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       {/* ── Exceptions Sidebar ── */}

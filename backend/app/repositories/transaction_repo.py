@@ -106,12 +106,22 @@ class TransactionRepository:
 
     def get_revenue_trend(self, granularity: str = "daily") -> List[dict]:
         """Return revenue aggregated by day/week/month."""
-        if granularity == "weekly":
-            trunc_expr = "strftime('%Y-%W', invoice_date)"
-        elif granularity == "monthly":
-            trunc_expr = "strftime('%Y-%m', invoice_date)"
+        is_postgres = "postgres" in str(self.db.bind.url) if self.db.bind else False
+        
+        if is_postgres:
+            if granularity == "weekly":
+                trunc_expr = "TO_CHAR(invoice_date, 'IYYY-IW')"
+            elif granularity == "monthly":
+                trunc_expr = "TO_CHAR(invoice_date, 'YYYY-MM')"
+            else:
+                trunc_expr = "CAST(invoice_date AS DATE)"
         else:
-            trunc_expr = "DATE(invoice_date)"
+            if granularity == "weekly":
+                trunc_expr = "strftime('%Y-%W', invoice_date)"
+            elif granularity == "monthly":
+                trunc_expr = "strftime('%Y-%m', invoice_date)"
+            else:
+                trunc_expr = "DATE(invoice_date)"
 
         sql = text(f"""
             SELECT

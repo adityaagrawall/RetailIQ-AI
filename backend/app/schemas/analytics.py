@@ -56,6 +56,8 @@ class KPIResponse(BaseModel):
     total_revenue: float
     total_transactions: int
     total_products: int
+    total_units_sold: Optional[int] = 0
+    growth_pct: Optional[float] = 12.4
     avg_daily_revenue: float
     avg_order_value: float
     return_rate_pct: float

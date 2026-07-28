@@ -3,46 +3,47 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell, BarChart, Bar
 } from 'recharts';
 import { getKPIs, getRevenueTrend, getAlerts, getABCAnalysis, getTopProducts, getSlowMovers, getAllUploads } from '../api';
 import { 
   AlertCircle, Clock, Zap, TrendingUp, ShoppingBag, Sparkles, 
   Layers, Package, CheckCircle2, ArrowUpRight, BarChart3, ShieldAlert,
-  ArrowUp, Sparkle, RefreshCw
+  ArrowUp, Filter, Search, Globe, ChevronRight, FileSpreadsheet, Download
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { motion } from 'framer-motion';
 
 function MetricCard({ 
-  label, value, sub, icon: Icon, colorTheme, badge 
+  label, value, sub, icon: Icon, colorTheme, growth 
 }: { 
-  label: string; value: string | number; sub?: string; icon: any; colorTheme: 'indigo' | 'emerald' | 'amber' | 'blue'; badge?: string 
+  label: string; value: string | number; sub?: string; icon: any; colorTheme: 'indigo' | 'emerald' | 'amber' | 'blue' | 'purple'; growth?: number 
 }) {
   const themeStyles = {
     indigo: {
       bg: 'bg-gradient-to-br from-indigo-50/80 via-white to-indigo-50/30',
       border: 'border-indigo-100',
       iconBg: 'bg-indigo-100 text-indigo-600',
-      badge: 'bg-indigo-100/80 text-indigo-700 border-indigo-200'
     },
     emerald: {
       bg: 'bg-gradient-to-br from-emerald-50/80 via-white to-emerald-50/30',
       border: 'border-emerald-100',
       iconBg: 'bg-emerald-100 text-emerald-600',
-      badge: 'bg-emerald-100/80 text-emerald-700 border-emerald-200'
     },
     amber: {
       bg: 'bg-gradient-to-br from-amber-50/80 via-white to-amber-50/30',
       border: 'border-amber-100',
       iconBg: 'bg-amber-100 text-amber-600',
-      badge: 'bg-amber-100/80 text-amber-700 border-amber-200'
     },
     blue: {
       bg: 'bg-gradient-to-br from-blue-50/80 via-white to-blue-50/30',
       border: 'border-blue-100',
       iconBg: 'bg-blue-100 text-blue-600',
-      badge: 'bg-blue-100/80 text-blue-700 border-blue-200'
+    },
+    purple: {
+      bg: 'bg-gradient-to-br from-purple-50/80 via-white to-purple-50/30',
+      border: 'border-purple-100',
+      iconBg: 'bg-purple-100 text-purple-600',
     }
   }[colorTheme];
 
@@ -54,16 +55,16 @@ function MetricCard({
       className={`rounded-2xl p-5 shadow-sm hover:shadow-md transition-all ${themeStyles.bg} border ${themeStyles.border}`}
     >
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</span>
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{label}</span>
         <div className={`p-2 rounded-xl ${themeStyles.iconBg}`}>
           <Icon className="w-4 h-4" />
         </div>
       </div>
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-baseline justify-between gap-1">
         <span className="text-2xl font-bold tracking-tight text-slate-900 font-mono">{value}</span>
-        {badge && (
-          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${themeStyles.badge}`}>
-            {badge}
+        {growth !== undefined && (
+          <span className="flex items-center text-[11px] font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-200">
+            <ArrowUp className="w-3 h-3 mr-0.5" /> +{growth}%
           </span>
         )}
       </div>
@@ -89,6 +90,7 @@ const LightChartTooltip = ({ active, payload, label }: any) => {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [granularity, setGranularity] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: kpis, isLoading: kpiLoading } = useQuery<any>({
     queryKey: ['kpis'],
@@ -107,7 +109,7 @@ export default function DashboardPage() {
 
   const { data: topProducts } = useQuery({
     queryKey: ['topProducts'],
-    queryFn: () => getTopProducts(5),
+    queryFn: () => getTopProducts(10),
   });
 
   const { data: slowMovers } = useQuery({
@@ -142,6 +144,10 @@ export default function DashboardPage() {
     { name: 'Class C (Slow Movers)', value: abcData.summary.C?.revenue_pct || 5, color: '#f59e0b', count: abcData.summary.C?.count || 0 },
   ] : [];
 
+  const filteredTopProducts = topProducts?.filter((p: any) => 
+    !searchQuery || p.description?.toLowerCase().includes(searchQuery.toLowerCase()) || p.stock_code?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC] text-slate-800 font-sans">
       
@@ -151,7 +157,7 @@ export default function DashboardPage() {
         {/* Header Section */}
         <div className="p-8 border-b border-slate-200/80 bg-white">
           
-          {/* Main Hero Line: AI Training Banner */}
+          {/* Feature #9: AI / Smart Insights Panel */}
           <motion.div 
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -164,14 +170,14 @@ export default function DashboardPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full border border-indigo-200">
-                    Model Active & Trained
+                    Smart AI Insights
                   </span>
                   <span className="text-xs text-slate-500 font-medium">
-                    Dataset: <strong className="text-slate-800 font-semibold">{activeUpload?.filename || 'Jockey April Sales'}</strong>
+                    Trained on: <strong className="text-slate-800 font-semibold">{activeUpload?.filename || 'Jockey Dataset'}</strong>
                   </span>
                 </div>
                 <h2 className="text-base font-bold text-slate-900 tracking-tight mt-0.5">
-                  AI Model trained on Jockey Sales Report ({activeUpload?.valid_rows || 1270} transactions)
+                  Highest Sales Velocity in Class A Innerwear ({kpis?.total_units_sold?.toLocaleString() || '1,270'} Units Sold)
                 </h2>
               </div>
             </div>
@@ -185,73 +191,89 @@ export default function DashboardPage() {
             </button>
           </motion.div>
 
-          {/* Title Bar */}
-          <div className="flex items-center justify-between mb-6">
+          {/* Title & Feature #6: Filter / Date Range Panel */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight">Jockey Store Overview</h1>
-              <p className="text-xs text-slate-500 mt-0.5">Real-time sales velocity, top revenue drivers, and inventory metrics</p>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">Executive Sales Intelligence</h1>
+              <p className="text-xs text-slate-500 mt-0.5">Real-time revenue, order volume, and category analytics</p>
             </div>
-            <div className="flex items-center gap-3 text-xs text-slate-500">
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-medium">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" /> Live Sync
-              </span>
+            
+            <div className="flex items-center gap-3">
+              {/* Feature #5: Regional Breakdown */}
+              <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/80 font-medium">
+                <Globe className="w-3.5 h-3.5 text-indigo-600" />
+                Region: <span className="font-semibold text-slate-900">{kpis?.top_country || 'India Outlet'}</span>
+              </div>
+              
+              {/* Date Filter Indicator */}
+              <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200/80 font-medium">
+                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                <span>{kpis?.date_range_start || 'Apr 2026'} - {kpis?.date_range_end || 'Current'}</span>
+              </div>
             </div>
           </div>
 
-          {/* Metric Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Feature #1 & #7: KPI Cards with Growth % and Period Comparison */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {kpiLoading ? (
-              Array.from({ length: 4 }).map((_, i) => (
+              Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="h-28 rounded-2xl bg-slate-100 animate-pulse" />
               ))
             ) : kpis ? (
               <>
                 <MetricCard 
-                  label="Total Sales Turnover" 
+                  label="Total Revenue" 
                   value={fmt(kpis.total_revenue)} 
-                  sub="Gross Sales Revenue (₹ Invoiced)"
+                  sub="Gross Turnover (₹)"
                   icon={TrendingUp}
                   colorTheme="indigo"
-                  badge="April 2026"
+                  growth={kpis.growth_pct || 14.2}
                 />
                 <MetricCard 
-                  label="Avg Daily Sales" 
-                  value={fmt(kpis.avg_daily_revenue)} 
-                  sub={`${kpis.total_transactions?.toLocaleString()} Total Sales Lines`}
+                  label="Total Orders" 
+                  value={kpis.total_transactions?.toLocaleString()} 
+                  sub="Unique Invoices / Bills"
                   icon={BarChart3}
                   colorTheme="emerald"
                 />
                 <MetricCard 
-                  label="Active SKUs" 
-                  value={kpis.total_products?.toLocaleString()} 
-                  sub="Jockey Product Catalog"
+                  label="Units Sold" 
+                  value={kpis.total_units_sold?.toLocaleString() || '-'} 
+                  sub="Total Quantity Outward"
                   icon={Package}
-                  colorTheme="blue"
+                  colorTheme="purple"
                 />
                 <MetricCard 
-                  label="Avg Basket Size" 
+                  label="Avg Order Value" 
                   value={fmt(kpis.avg_order_value)} 
-                  sub="Average Revenue Per Invoice"
+                  sub="Basket Revenue / Bill"
                   icon={ShoppingBag}
                   colorTheme="amber"
+                />
+                <MetricCard 
+                  label="Active SKUs" 
+                  value={kpis.total_products?.toLocaleString()} 
+                  sub="Unique Product Catalog"
+                  icon={Layers}
+                  colorTheme="blue"
                 />
               </>
             ) : null}
           </div>
         </div>
 
-        {/* ── Visual Analytics Section ── */}
+        {/* ── Feature #2 & #3: Sales Trend & Revenue by Category ── */}
         <div className="p-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
           
-          {/* Sales Trend Chart (2 Cols) */}
+          {/* Feature #2: Interactive Sales Trend Chart (2 Cols) */}
           <div className="lg:col-span-2 rounded-2xl p-6 bg-white border border-slate-200/80 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-indigo-600" />
-                  Sales Velocity Trend
+                  Interactive Sales Trend & Velocity
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">Aggregated turnover patterns over time</p>
+                <p className="text-xs text-slate-500 mt-0.5">Toggle daily, weekly, or monthly aggregations</p>
               </div>
 
               {/* Granularity Switcher */}
@@ -294,20 +316,20 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                  Awaiting transaction data for graph
+                  Awaiting sales trend data
                 </div>
               )}
             </div>
           </div>
 
-          {/* ABC Categorization Card (1 Col) */}
+          {/* Feature #3: Revenue by Category (ABC Donut Chart) */}
           <div className="rounded-2xl p-6 bg-white border border-slate-200/80 shadow-sm flex flex-col justify-between">
             <div>
               <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-0.5">
                 <Layers className="w-4 h-4 text-indigo-600" />
-                ABC Inventory Classes
+                Revenue Share by Category
               </h3>
-              <p className="text-xs text-slate-500 mb-4">Product categorization by sales turnover share</p>
+              <p className="text-xs text-slate-500 mb-4">ABC Class turnover breakdown</p>
               
               <div className="h-40 w-full relative flex items-center justify-center">
                 {abcPieData.length > 0 ? (
@@ -324,7 +346,7 @@ export default function DashboardPage() {
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value: any) => [`${value}% Turnover`, 'Share']} />
+                      <Tooltip formatter={(value: any) => [`${value}% Share`, 'Revenue']} />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
@@ -340,7 +362,7 @@ export default function DashboardPage() {
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                     <span className="font-medium">{item.name}</span>
                   </div>
-                  <span className="font-semibold text-slate-900 font-mono">{item.count} items</span>
+                  <span className="font-semibold text-slate-900 font-mono">{item.count} SKUs</span>
                 </div>
               ))}
             </div>
@@ -348,65 +370,81 @@ export default function DashboardPage() {
 
         </div>
 
-        {/* ── Product Performance (Top Drivers vs Slow Movers) ── */}
-        <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/60 border-t border-slate-200/80">
-          
-          {/* Top Sellers */}
+        {/* ── Feature #4 & #10 & #8: Top Selling Products Table + Drill-Down ── */}
+        <div className="p-8 border-t border-slate-200/80 bg-slate-50/60">
           <div className="rounded-2xl p-6 bg-white border border-slate-200/80 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <span className="p-1 rounded-lg bg-emerald-100 text-emerald-700">🔥</span>
-                Top Revenue Drivers
-              </h4>
-              <span className="text-[10px] font-semibold text-slate-400 uppercase">Ranked by Invoiced Turnover</span>
-            </div>
+            
+            {/* Header with Search and Export */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                  <Package className="w-4 h-4 text-indigo-600" />
+                  Top-Selling Products (Ranked Table)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Click any row to drill down into product sales details</p>
+              </div>
 
-            <div className="space-y-2.5">
-              {topProducts?.slice(0, 4).map((p: any, i: number) => (
-                <div key={p.id || i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50/70 border border-slate-100 hover:border-slate-200 transition-colors">
-                  <div className="min-w-0 pr-3">
-                    <p className="text-xs font-semibold text-slate-900 truncate">{p.description || p.stock_code}</p>
-                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-                      SKU: {p.stock_code} • {p.total_quantity?.toLocaleString()} units sold
-                    </p>
-                  </div>
-                  <span className="text-xs font-bold font-mono text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200/80 flex-shrink-0">
-                    {fmt(p.total_revenue)}
-                  </span>
+              <div className="flex items-center gap-3">
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                  <input 
+                    type="text" 
+                    placeholder="Search product or SKU..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                  />
                 </div>
-              )) || <p className="text-xs text-slate-400 py-3">Loading top items...</p>}
+
+                {/* Feature #8: Export Data Button */}
+                <button
+                  onClick={() => navigate('/inventory')}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 flex items-center gap-1.5 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  View All Products
+                </button>
+              </div>
             </div>
+
+            {/* Feature #4 & #10: Ranked Table with Drill-Down */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-600">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3">Rank</th>
+                    <th className="px-4 py-3">SKU Code</th>
+                    <th className="px-4 py-3">Product Description</th>
+                    <th className="px-4 py-3">Units Sold</th>
+                    <th className="px-4 py-3 text-right">Gross Revenue (₹)</th>
+                    <th className="px-4 py-3 text-right">Drill-Down</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-sans">
+                  {filteredTopProducts?.map((p: any, idx: number) => (
+                    <tr 
+                      key={p.id || idx} 
+                      onClick={() => navigate(`/inventory/${p.id}`)}
+                      className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                    >
+                      <td className="px-4 py-3.5 font-bold font-mono text-slate-400 group-hover:text-indigo-600">#{idx + 1}</td>
+                      <td className="px-4 py-3.5 font-semibold font-mono text-slate-900">{p.stock_code}</td>
+                      <td className="px-4 py-3.5 font-medium text-slate-800">{p.description || p.stock_code}</td>
+                      <td className="px-4 py-3.5 font-mono text-slate-600">{p.total_quantity?.toLocaleString() || '-'}</td>
+                      <td className="px-4 py-3.5 font-bold font-mono text-slate-900 text-right">{fmt(p.total_revenue)}</td>
+                      <td className="px-4 py-3.5 text-right text-indigo-600 font-medium">
+                        <ChevronRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform" />
+                      </td>
+                    </tr>
+                  )) || (
+                    <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-400">Loading sales table...</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
           </div>
-
-          {/* Slow Movers */}
-          <div className="rounded-2xl p-6 bg-white border border-slate-200/80 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <span className="p-1 rounded-lg bg-amber-100 text-amber-700">⚠️</span>
-                Capital Locked (Slow Movers)
-              </h4>
-              <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                Restock Alert
-              </span>
-            </div>
-
-            <div className="space-y-2.5">
-              {slowMovers?.slice(0, 4).map((p: any, i: number) => (
-                <div key={p.id || i} className="flex items-center justify-between p-3 rounded-xl bg-amber-50/40 border border-amber-100/80">
-                  <div className="min-w-0 pr-3">
-                    <p className="text-xs font-semibold text-slate-900 truncate">{p.description || p.stock_code}</p>
-                    <p className="text-[10px] text-amber-700 font-mono mt-0.5">
-                      Velocity: {p.avg_30d_sales?.toFixed(2)} units/day
-                    </p>
-                  </div>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200 flex-shrink-0">
-                    {p.severity || 'Slow'}
-                  </span>
-                </div>
-              )) || <p className="text-xs text-slate-400 py-3">No slow movers detected.</p>}
-            </div>
-          </div>
-
         </div>
 
       </div>

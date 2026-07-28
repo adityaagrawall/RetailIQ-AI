@@ -57,8 +57,8 @@ export default function Layout() {
       <aside className="w-60 flex-shrink-0 bg-[#FBFBFA] border-r border-gray-200 flex flex-col">
         {/* Workspace Selector */}
         <div className="h-14 flex items-center gap-2.5 px-5 mt-1 mb-2">
-          <div className="w-5 h-5 rounded-[4px] bg-gray-900 shadow-sm" />
-          <span className="text-sm font-semibold text-gray-900 tracking-tight">RetailIQ AI</span>
+          <img src="/logo.jpg" alt="RetailIQ Logo" className="w-6 h-6 rounded-md shadow-sm border border-gray-200/60" />
+          <span className="text-sm font-bold text-gray-900 tracking-tight">RetailIQ AI</span>
         </div>
 
         {/* Primary Nav */}

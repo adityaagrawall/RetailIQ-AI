@@ -43,6 +43,9 @@ export default function WelcomeScreen({ children }: { children: React.ReactNode 
       <div className="max-w-4xl mx-auto py-16 px-6">
         
         <div className="text-center mb-16">
+          <div className="flex justify-center mb-6">
+            <img src="/logo.jpg" alt="RetailIQ Logo" className="w-16 h-16 rounded-xl shadow-md border border-gray-200/80" />
+          </div>
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight mb-3">RetailIQ</h1>
           <p className="text-xl text-gray-600 font-medium">Retail Operations Intelligence Platform</p>
           <p className="mt-4 text-gray-500 max-w-2xl mx-auto">

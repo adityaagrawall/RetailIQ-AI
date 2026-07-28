@@ -24,8 +24,8 @@ def extract_tally_excel(file_content: bytes) -> pd.DataFrame:
     logger.info(f"Tally Extractor: Located header at row {header_idx}")
     
     # Reload with correct header
-    df = pd.read_excel(io.BytesIO(file_content), skiprows=header_idx + 1)
-    df.columns = df.columns.str.strip()
+    df = pd.read_excel(io.BytesIO(file_content), skiprows=header_idx)
+    df.columns = [str(c).strip() for c in df.columns]
     
     df_clean = pd.DataFrame()
     

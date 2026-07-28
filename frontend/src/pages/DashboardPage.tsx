@@ -133,8 +133,8 @@ export default function DashboardPage() {
 
   const fmt = (v?: number) => {
     if (v === undefined || v === null) return "₹0";
-    return v >= 1_000_000_000 ? `₹${(v / 1_000_000_000).toFixed(2)}B`
-    : v >= 1_000_000 ? `₹${(v / 1_000_000).toFixed(2)}M`
+    return v >= 10_000_000 ? `₹${(v / 10_000_000).toFixed(2)}Cr`
+    : v >= 100_000 ? `₹${(v / 100_000).toFixed(2)}L`
     : v >= 1_000 ? `₹${(v / 1_000).toFixed(1)}K`
     : `₹${v?.toFixed(0) ?? 0}`;
   };

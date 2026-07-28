@@ -72,10 +72,11 @@ export default function Layout() {
         </div>
         
         {/* User Profile */}
-        <div className="mt-auto px-4 py-3 border-t border-gray-200/60 flex items-center gap-2 cursor-pointer hover:bg-gray-100 transition-colors">
-          <div className="w-5 h-5 rounded bg-gradient-to-tr from-gray-300 to-gray-400 shadow-inner" />
+        <div className="mt-auto px-4 py-4 border-t border-gray-200/60 flex items-center gap-3 cursor-pointer hover:bg-gray-100 transition-colors">
+          <img src="/admin_avatar.jpg" alt="System Admin" className="w-8 h-8 rounded-full shadow-sm object-cover border border-gray-200/80" />
           <div className="flex flex-col min-w-0">
-            <span className="text-xs font-medium text-gray-900 truncate">System Admin</span>
+            <span className="text-sm font-bold text-gray-900 truncate tracking-tight">System Admin</span>
+            <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">Workspace Owner</span>
           </div>
         </div>
       </aside>

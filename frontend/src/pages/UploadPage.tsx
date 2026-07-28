@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, Check, AlertCircle, Database, Trash2, RefreshCw, Eye } from 'lucide-react';
-import { uploadFile, getUploadStatus, getAllUploads, setActiveUpload, deleteUpload } from '../api';
+import { uploadFile, getUploadStatus, getAllUploads, setActiveUpload, deleteUpload, trainModel } from '../api';
 import { clsx } from 'clsx';
 
 type State = 'idle' | 'processing' | 'completed' | 'failed';
@@ -123,8 +123,18 @@ export default function UploadPage() {
     }
   };
 
-  const handleRetrain = () => {
-    alert("Model retraining initiated in background.");
+  const [isTraining, setIsTraining] = useState(false);
+
+  const handleRetrain = async () => {
+    try {
+      setIsTraining(true);
+      await trainModel({ model: 'xgboost', horizon_days: 30 });
+      alert("🤖 Machine Learning model training started successfully! The model is now training on your active dataset in the background.");
+    } catch (e: any) {
+      alert("Training failed: " + (e.response?.data?.detail || e.message));
+    } finally {
+      setIsTraining(false);
+    }
   };
 
   return (
@@ -272,15 +282,22 @@ export default function UploadPage() {
                     <td className="px-5 py-4 text-xs">
                       {ds.status === 'completed' ? 'Completed' : 'Pending'}
                     </td>
-                    <td className="px-5 py-4 text-right flex justify-end gap-2">
+                    <td className="px-5 py-4 text-right flex justify-end items-center gap-2">
+                      {ds.is_active && ds.status === 'completed' && (
+                        <button 
+                          onClick={handleRetrain} 
+                          disabled={isTraining} 
+                          className="px-2.5 py-1 text-xs bg-gray-900 text-white rounded hover:bg-gray-800 flex items-center gap-1.5 font-medium transition-colors shadow-sm disabled:opacity-50"
+                        >
+                          <RefreshCw className={clsx("w-3 h-3", isTraining && "animate-spin")} />
+                          {isTraining ? "Training..." : "Train Model"}
+                        </button>
+                      )}
                       {!ds.is_active && ds.status === 'completed' && (
                         <button onClick={() => handleSetActive(ds.id)} className="text-xs text-blue-600 hover:text-blue-800 font-medium">Set Active</button>
                       )}
                       {ds.status === 'completed' && (
-                        <>
-                          <button onClick={() => navigate('/overview')} title="View Dashboard" className="p-1 text-gray-400 hover:text-gray-900"><Eye className="w-4 h-4" /></button>
-                          <button onClick={handleRetrain} title="Retrain Models" className="p-1 text-gray-400 hover:text-gray-900"><RefreshCw className="w-4 h-4" /></button>
-                        </>
+                        <button onClick={() => navigate('/overview')} title="View Dashboard" className="p-1 text-gray-400 hover:text-gray-900"><Eye className="w-4 h-4" /></button>
                       )}
                       <button onClick={() => handleDelete(ds.id)} title="Delete Dataset" className="p-1 text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                     </td>

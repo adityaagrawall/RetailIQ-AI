@@ -54,19 +54,21 @@ function MetricCard({
       transition={{ duration: 0.3 }}
       className={`rounded-2xl p-5 shadow-sm hover:shadow-md transition-all ${themeStyles.bg} border ${themeStyles.border}`}
     >
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 gap-2">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{label}</span>
-        <div className={`p-2 rounded-xl ${themeStyles.iconBg}`}>
-          <Icon className="w-4 h-4" />
+        <div className="flex items-center gap-2">
+          {growth !== undefined && (
+            <span className="flex items-center text-[10px] font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
+              <ArrowUp className="w-2.5 h-2.5 mr-0.5" /> +{growth}%
+            </span>
+          )}
+          <div className={`p-2 rounded-xl ${themeStyles.iconBg}`}>
+            <Icon className="w-4 h-4" />
+          </div>
         </div>
       </div>
-      <div className="flex items-baseline justify-between gap-1">
+      <div className="flex items-baseline justify-between">
         <span className="text-2xl font-bold tracking-tight text-slate-900 font-mono">{value}</span>
-        {growth !== undefined && (
-          <span className="flex items-center text-[11px] font-bold text-emerald-700 bg-emerald-100/90 px-2 py-0.5 rounded-full border border-emerald-200">
-            <ArrowUp className="w-3 h-3 mr-0.5" /> +{growth}%
-          </span>
-        )}
       </div>
       {sub && <span className="text-xs text-slate-500 mt-1.5 block font-sans">{sub}</span>}
     </motion.div>
@@ -214,7 +216,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Feature #1 & #7: KPI Cards with Growth % and Period Comparison */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {kpiLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="h-28 rounded-2xl bg-slate-100 animate-pulse" />
@@ -418,27 +420,22 @@ export default function DashboardPage() {
                     <th className="px-4 py-3">Product Description</th>
                     <th className="px-4 py-3">Units Sold</th>
                     <th className="px-4 py-3 text-right">Gross Revenue (₹)</th>
-                    <th className="px-4 py-3 text-right">Drill-Down</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-sans">
                   {filteredTopProducts?.map((p: any, idx: number) => (
                     <tr 
                       key={p.id || idx} 
-                      onClick={() => navigate(`/inventory/${p.id}`)}
-                      className="hover:bg-slate-50/80 transition-colors cursor-pointer group"
+                      className="hover:bg-slate-50/80 transition-colors"
                     >
-                      <td className="px-4 py-3.5 font-bold font-mono text-slate-400 group-hover:text-indigo-600">#{idx + 1}</td>
+                      <td className="px-4 py-3.5 font-bold font-mono text-slate-400">#{idx + 1}</td>
                       <td className="px-4 py-3.5 font-semibold font-mono text-slate-900">{p.stock_code}</td>
                       <td className="px-4 py-3.5 font-medium text-slate-800">{p.description || p.stock_code}</td>
                       <td className="px-4 py-3.5 font-mono text-slate-600">{p.total_quantity?.toLocaleString() || '-'}</td>
                       <td className="px-4 py-3.5 font-bold font-mono text-slate-900 text-right">{fmt(p.total_revenue)}</td>
-                      <td className="px-4 py-3.5 text-right text-indigo-600 font-medium">
-                        <ChevronRight className="w-4 h-4 ml-auto group-hover:translate-x-1 transition-transform" />
-                      </td>
                     </tr>
                   )) || (
-                    <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-400">Loading sales table...</td></tr>
+                    <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-400">Loading sales table...</td></tr>
                   )}
                 </tbody>
               </table>
